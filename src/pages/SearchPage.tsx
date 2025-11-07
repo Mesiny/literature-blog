@@ -38,12 +38,12 @@ const SearchPage = () => {
           supabase.from('books').select('*'),
           supabase.from('novels').select('*')
         ])
-        
+
         if (articlesRes.error) throw articlesRes.error
         if (lifePostsRes.error) throw lifePostsRes.error
         if (booksRes.error) throw booksRes.error
         if (novelsRes.error) throw novelsRes.error
-        
+
         // 转换数据格式
         const articles = [
           ...(articlesRes.data || []).map(a => ({
@@ -70,26 +70,26 @@ const SearchPage = () => {
             author: p.author || '岁月缱绻'
           }))
         ]
-        
+
         const books = (booksRes.data || []).map(b => ({
           id: b.id,
-          bookTitle: b.title,
+          bookTitle: b.book_title,
           author: b.author,
           recommendation: b.recommendation,
           category: b.category,
           date: new Date(b.created_at).toLocaleDateString('zh-CN'),
           rating: b.rating
         }))
-        
+        // console.log(novelsRes.data)
         const novels = (novelsRes.data || []).map(n => ({
           id: n.id,
-          novelTitle: n.title,
+          novelTitle: n.novel_title,
           synopsis: n.synopsis,
           tags: n.tags || [],
           lastUpdate: new Date(n.updated_at).toLocaleDateString('zh-CN'),
           status: n.status
         }))
-        
+
         setAllData({ articles, books, novels })
       } catch (error) {
         console.error('Failed to load data:', error)
@@ -100,23 +100,23 @@ const SearchPage = () => {
             fetch('/data/books.json'),
             fetch('/data/novels.json')
           ])
-          
+
           const articles = await articlesRes.json()
           const books = await booksRes.json()
           const novels = await novelsRes.json()
-          
+
           setAllData({ articles, books, novels })
         } catch (fallbackError) {
           console.error('Failed to load fallback data:', fallbackError)
         }
       }
     }
-    
+
     loadAllData()
   }, [])
 
   useEffect(() => {
-    if (query && allData.articles.length > 0) {
+    if (query && (allData.articles.length > 0) || (allData.books.length > 0) || (allData.novels.length > 0)) {
       performSearch(query)
     } else {
       setResults([])
@@ -142,9 +142,10 @@ const SearchPage = () => {
         })
       }
     })
-
+    console.log(allData.books)
     // 搜索书籍
     allData.books.forEach(book => {
+
       if (
         book.bookTitle.toLowerCase().includes(query) ||
         book.author.toLowerCase().includes(query) ||
@@ -194,11 +195,11 @@ const SearchPage = () => {
 
   const highlightText = (text: string, query: string) => {
     if (!query) return text
-    
+
     const regex = new RegExp(`(${query})`, 'gi')
     const parts = text.split(regex)
-    
-    return parts.map((part, index) => 
+
+    return parts.map((part, index) =>
       regex.test(part) ? (
         <mark key={index} className="bg-accent-primary/20 text-accent-primary px-1 rounded">
           {part}
@@ -256,7 +257,7 @@ const SearchPage = () => {
             </div>
             {query && (
               <p className="font-sans text-body text-text-secondary">
-                搜索结果："{query}" 
+                搜索结果："{query}"
                 {results.length > 0 && ` - 找到 ${results.length} 个结果`}
               </p>
             )}

@@ -13,26 +13,27 @@ const modules = {
   toolbar: [
     [{ 'header': [1, 2, 3, false] }],
     ['bold', 'italic', 'underline', 'strike'],
-    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-    [{ 'align': [] }],
-    ['blockquote', 'code-block'],
-    ['link'],
-    ['clean']
+    // [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+    // [{ 'align': [] }],
+    ['blockquote']
+    // ['link'],
+    // ['clean']
   ]
 }
 
 const formats = [
   'header',
   'bold', 'italic', 'underline', 'strike',
-  'list', 'bullet',
-  'align',
-  'blockquote', 'code-block',
-  'link'
+  // 'list', 'bullet',
+  // 'align',
+  'blockquote',
+  // 'code-block',
+  // 'link'
 ]
 
-export default function RichTextEditor({ 
-  value, 
-  onChange, 
+export default function RichTextEditor({
+  value,
+  onChange,
   placeholder = '开始编写内容...',
   minHeight = '300px'
 }: RichTextEditorProps) {
@@ -44,7 +45,7 @@ export default function RichTextEditor({
 
   if (!mounted) {
     return (
-      <div 
+      <div
         className="border border-divider rounded bg-surface p-4"
         style={{ minHeight }}
       >

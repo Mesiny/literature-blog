@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { BookOpen, Calendar, FileText, Clock, ChevronDown, ChevronUp } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
@@ -26,7 +26,9 @@ interface Novel {
 const NovelsPage = () => {
   const [novels, setNovels] = useState<Novel[]>([])
   const [expandedChapters, setExpandedChapters] = useState<number | null>(null)
-
+  // 判断有没有novel_id传过来,传过来的话就直接跳转到对应的小说章节 */
+  const [searchParams, setSearchParams] = useSearchParams();
+  const id = searchParams.get('id');
   useEffect(() => {
     const loadNovels = async () => {
       try {
@@ -47,12 +49,17 @@ const NovelsPage = () => {
               .eq('novel_id', novel.id)
               .eq('is_published', true)
               .order('chapter_number', { ascending: true })
-
+            // await supabase
+            //   .from('novels')
+            //   .update({
+            //     chapter_count: chapters?.length || 0
+            //   })
+            //   .eq('id', novel.id)
             return {
               id: novel.id,
               novelTitle: novel.novel_title,
               synopsis: novel.synopsis,
-              chapterCount: novel.chapter_count,
+              chapterCount: chapters?.length || 0,
               lastUpdate: novel.last_update,
               status: novel.status,
               coverImage: novel.cover_image,
@@ -67,7 +74,7 @@ const NovelsPage = () => {
             }
           })
         )
-
+        if (id) setShowChapters(Number(id))
         setNovels(novelsWithChapters)
       } catch (error) {
         console.error('加载小说失败:', error)
@@ -80,7 +87,7 @@ const NovelsPage = () => {
         }
       }
     }
-    
+
     loadNovels()
   }, [])
 
@@ -138,15 +145,14 @@ const NovelsPage = () => {
                         <h2 className="font-serif text-h2 text-text-primary group-hover:text-accent-primary transition-colors duration-fast">
                           {novel.novelTitle}
                         </h2>
-                        <span className={`px-3 py-1 font-sans text-metadata rounded-xs ${
-                          novel.status === '连载中' 
-                            ? 'bg-accent-primary/10 text-accent-primary' 
-                            : 'bg-background-surface text-text-tertiary'
-                        }`}>
+                        <span className={`px-3 py-1 font-sans text-metadata rounded-xs ${novel.status === '连载中'
+                          ? 'bg-accent-primary/10 text-accent-primary'
+                          : 'bg-background-surface text-text-tertiary'
+                          }`}>
                           {novel.status}
                         </span>
                       </div>
-                      
+
                       <p className="font-serif text-body text-text-secondary leading-relaxed">
                         {novel.synopsis}
                       </p>
@@ -189,9 +195,9 @@ const NovelsPage = () => {
                           <ChevronDown size={20} />
                         )}
                       </button>
-                      
+
                       {expandedChapters === novel.id && (
-                        <div className="space-y-2 max-h-80 overflow-y-auto bg-background-page rounded-xs p-4">
+                        <div className="space-y-2 max-h-60 overflow-y-auto bg-background-page rounded-xs p-4">
                           {novel.chapters.map((chapter) => (
                             <Link
                               key={chapter.chapterNumber}

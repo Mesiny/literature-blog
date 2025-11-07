@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { Plus, Edit2, Trash2, Eye, EyeOff, X, Save, Search, CheckSquare, Square } from 'lucide-react'
 import ImageUpload from '../../components/admin/ImageUpload'
+import RichTextEditor from '../../components/admin/RichTextEditor'
 
 interface LifePost {
   id: number
@@ -54,7 +55,7 @@ export default function AdminLife() {
       setFilteredPosts(posts)
     } else {
       const term = searchTerm.toLowerCase()
-      setFilteredPosts(posts.filter(post => 
+      setFilteredPosts(posts.filter(post =>
         post.title.toLowerCase().includes(term) ||
         post.category.toLowerCase().includes(term) ||
         post.excerpt.toLowerCase().includes(term)
@@ -67,7 +68,7 @@ export default function AdminLife() {
       const { data, error } = await supabase
         .from('life_posts')
         .select('*')
-        .order('date', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (error) throw error
       setPosts(data || [])
@@ -78,10 +79,18 @@ export default function AdminLife() {
       setLoading(false)
     }
   }
+  function getPlainTextLength(html) {
+    // 创建临时DOM元素
+    const tempElement = document.createElement('div');
+    tempElement.innerHTML = html;
 
+    // 获取纯文本内容
+    const plainText = tempElement.textContent || tempElement.innerText || '';
+    return plainText.length;
+  }
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    
+
     if (!formData.title || !formData.content) {
       alert('请填写标题和内容')
       return
@@ -105,13 +114,13 @@ export default function AdminLife() {
           .eq('id', editingId)
 
         if (error) throw error
-        
+
         // 更新图片：先删除旧图片，再添加新图片
         await supabase
           .from('life_post_images')
           .delete()
           .eq('life_post_id', editingId)
-        
+
         // 添加新图片
         if (formData.images.length > 0) {
           const imageRecords = formData.images
@@ -121,14 +130,14 @@ export default function AdminLife() {
               image_url: img,
               display_order: index
             }))
-          
+
           if (imageRecords.length > 0) {
             await supabase
               .from('life_post_images')
               .insert(imageRecords)
           }
         }
-        
+
         alert('更新成功')
       } else {
         // 新建生活分享
@@ -147,7 +156,7 @@ export default function AdminLife() {
           .single()
 
         if (error) throw error
-        
+
         // 保存图片
         if (newPost && formData.images.length > 0) {
           const imageRecords = formData.images
@@ -157,14 +166,14 @@ export default function AdminLife() {
               image_url: img,
               display_order: index
             }))
-          
+
           if (imageRecords.length > 0) {
             await supabase
               .from('life_post_images')
               .insert(imageRecords)
           }
         }
-        
+
         alert('创建成功')
       }
 
@@ -181,14 +190,14 @@ export default function AdminLife() {
   async function openForm(post?: LifePost) {
     if (post) {
       setEditingId(post.id)
-      
+
       // 加载图片
       const { data: images } = await supabase
         .from('life_post_images')
         .select('image_url')
         .eq('life_post_id', post.id)
         .order('display_order')
-      
+
       setFormData({
         title: post.title,
         excerpt: post.excerpt,
@@ -224,7 +233,7 @@ export default function AdminLife() {
         .eq('id', id)
 
       if (error) throw error
-      
+
       setPosts(posts.map(post =>
         post.id === id
           ? { ...post, is_published: !currentStatus }
@@ -368,18 +377,17 @@ export default function AdminLife() {
           生活分享管理
         </h2>
         <div className="flex items-center gap-3">
-          <button 
+          <button
             onClick={() => setShowBatchActions(!showBatchActions)}
-            className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
-              showBatchActions 
-                ? 'bg-accent-primary text-white' 
-                : 'bg-surface border border-divider text-text-primary hover:bg-background-page'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${showBatchActions
+              ? 'bg-accent-primary text-white'
+              : 'bg-surface border border-divider text-text-primary hover:bg-background-page'
+              }`}
           >
             {showBatchActions ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
             批量操作
           </button>
-          <button 
+          <button
             onClick={() => openForm()}
             className="flex items-center gap-2 px-4 py-2 bg-accent-primary text-white rounded hover:bg-accent-hover transition-colors"
           >
@@ -506,11 +514,10 @@ export default function AdminLife() {
                   <td className="px-6 py-4 text-sm text-text-secondary">{post.date}</td>
                   <td className="px-6 py-4 text-sm text-text-secondary">{post.read_count}</td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                      post.is_published
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}>
+                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${post.is_published
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-100 text-gray-700'
+                      }`}>
                       {post.is_published ? '已发布' : '草稿'}
                     </span>
                   </td>
@@ -603,16 +610,20 @@ export default function AdminLife() {
               <label className="block text-sm font-medium text-text-primary mb-2">
                 正文 *
               </label>
-              <textarea
+              {/* <textarea
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 rows={12}
                 className="w-full px-4 py-2 border border-divider rounded focus:outline-none focus:ring-2 focus:ring-accent-primary font-mono text-sm whitespace-pre-wrap"
                 required
                 placeholder="支持单回车换行，段落之间可以用双回车分隔"
+              /> */}
+              <RichTextEditor
+                value={formData.content}
+                onChange={(value) => setFormData({ ...formData, content: value })}
               />
               <p className="text-xs text-text-tertiary mt-1">
-                字数: {formData.content.length}
+                字数: {getPlainTextLength(formData.content)}
               </p>
             </div>
 

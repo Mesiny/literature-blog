@@ -14,8 +14,8 @@ async function createAdmin() {
   try {
     // 创建管理员账号
     const { data, error } = await supabase.auth.admin.createUser({
-      email: 'admin@literature.com',
-      password: 'Literature2025!',
+      email: 'blog@xxc.com',
+      password: '200308',
       email_confirm: true
     })
 

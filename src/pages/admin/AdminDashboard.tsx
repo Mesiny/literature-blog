@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { Users, FileText, BookMarked, BookOpen, Heart } from 'lucide-react'
+import { Users, FileText, BookMarked, BookOpen, Heart, Tags } from 'lucide-react'
 
 interface Stats {
   totalArticles: number
@@ -60,6 +60,15 @@ export default function AdminDashboard() {
         publishedBooks,
         totalViews: articleViews + lifeViews
       })
+      await supabase
+        .from('stats')
+        .update({
+          total_articles: publishedArticles,
+          total_novels: novelsResult.count || 0,
+          total_recommend: publishedBooks,
+          total_life: lifePostsResult.count || 0
+        })
+        .eq('id', 1)
     } catch (error) {
       console.error('加载统计数据失败:', error)
     } finally {
@@ -168,7 +177,7 @@ export default function AdminDashboard() {
               创建、编辑读书感悟文章，支持富文本编辑和标签
             </p>
           </a>
-          
+
           <a
             href="/admin/books"
             className="block bg-surface rounded-lg border border-divider p-6 hover:border-accent-primary hover:shadow-sm transition-all"
@@ -181,7 +190,7 @@ export default function AdminDashboard() {
               添加书籍推荐，上传封面图片，设置评分
             </p>
           </a>
-          
+
           <a
             href="/admin/novels"
             className="block bg-surface rounded-lg border border-divider p-6 hover:border-accent-primary hover:shadow-sm transition-all"
@@ -194,7 +203,7 @@ export default function AdminDashboard() {
               管理小说连载、章节编辑、上传封面
             </p>
           </a>
-          
+
           <a
             href="/admin/life"
             className="block bg-surface rounded-lg border border-divider p-6 hover:border-accent-primary hover:shadow-sm transition-all"
@@ -205,6 +214,19 @@ export default function AdminDashboard() {
             </div>
             <p className="text-sm text-text-secondary">
               发布日常生活记录，支持批量图片上传
+            </p>
+          </a>
+
+          <a
+            href="/admin/tags"
+            className="block bg-surface rounded-lg border border-divider p-6 hover:border-accent-primary hover:shadow-sm transition-all"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <Tags className="w-5 h-5 text-accent-primary" />
+              <h4 className="font-medium text-text-primary">标签管理</h4>
+            </div>
+            <p className="text-sm text-text-secondary">
+              管理自定义标签，为内容分类打标
             </p>
           </a>
         </div>

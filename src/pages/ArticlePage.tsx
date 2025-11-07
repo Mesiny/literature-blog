@@ -12,7 +12,8 @@ interface Article {
   date: string
   readCount: number
   author: string
-  relatedBook?: number
+  relatedBook?: number,
+  excerpt?: string
 }
 
 const ArticlePage = () => {
@@ -25,7 +26,7 @@ const ArticlePage = () => {
       try {
         const articleId = parseInt(id || '0')
         let foundArticle: Article | null = null
-        
+
         // 从 Supabase 加载文章
         if (category === '读书感悟') {
           const { data, error } = await supabase
@@ -34,9 +35,9 @@ const ArticlePage = () => {
             .eq('id', articleId)
             .eq('category', '读书感悟')
             .maybeSingle()
-          
+
           if (error) throw error
-          
+
           if (data) {
             foundArticle = {
               id: data.id,
@@ -47,24 +48,36 @@ const ArticlePage = () => {
               date: new Date(data.created_at).toLocaleDateString('zh-CN'),
               readCount: data.read_count || 0,
               author: data.author || '岁月缱绻',
-              relatedBook: data.related_book_id
+              relatedBook: data.related_book_id,
+              excerpt: data.excerpt || ''
             }
-            
+
             // 增加阅读量
             await supabase
               .from('articles')
               .update({ read_count: (data.read_count || 0) + 1 })
               .eq('id', articleId)
+            // 更新总访问量
+            const { data: currentData, error: queryError } = await supabase
+              .from('stats')
+              .select('*')
+              .maybeSingle()
+            await supabase
+              .from('stats')
+              .update({
+                total_visitors: currentData.total_visitors + 1
+              })
+              .eq('id', 1)
           }
+
         } else if (category === '生活分享') {
           const { data, error } = await supabase
             .from('life_posts')
             .select('*')
             .eq('id', articleId)
             .maybeSingle()
-          
+
           if (error) throw error
-          
           if (data) {
             foundArticle = {
               id: data.id,
@@ -76,15 +89,26 @@ const ArticlePage = () => {
               readCount: data.read_count || 0,
               author: data.author || '岁月缱绻'
             }
-            
+
             // 增加阅读量
             await supabase
               .from('life_posts')
               .update({ read_count: (data.read_count || 0) + 1 })
               .eq('id', articleId)
+            // 更新总访问量
+            const { data: currentData, error: queryError } = await supabase
+              .from('stats')
+              .select('*')
+              .maybeSingle()
+            await supabase
+              .from('stats')
+              .update({
+                total_visitors: currentData.total_visitors + 1
+              })
+              .eq('id', 1)
           }
         }
-        
+
         setArticle(foundArticle)
       } catch (error) {
         console.error('Failed to load article:', error)
@@ -107,7 +131,7 @@ const ArticlePage = () => {
         setLoading(false)
       }
     }
-    
+
     if (category && id) {
       loadArticle()
     }
@@ -116,23 +140,56 @@ const ArticlePage = () => {
   const formatContent = (content: string) => {
     // 如果内容包含HTML标签，直接渲染HTML
     if (content.includes('<p>') || content.includes('<br>') || content.includes('<div>')) {
+      const addClassToBlockquotes = (htmlString: string): string => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlString, 'text/html');
+
+        const blockquotes = doc.querySelectorAll('blockquote');
+        const h1s = doc.querySelectorAll('h1');
+        const h2s = doc.querySelectorAll('h2');
+        const h3s = doc.querySelectorAll('h3');
+        blockquotes.forEach(blockquote => {
+          // 在 DOM 操作中仍然使用 classList，因为这是原生 DOM API
+          blockquote.classList.add('pull-quote');
+        });
+        h1s.forEach(h1 => {
+          const pElement = document.createElement('p')
+          pElement.innerHTML = h1.innerHTML;
+          pElement.classList.add('h1');
+          h1.replaceWith(pElement);
+        });
+        h2s.forEach(h2 => {
+          const pElement = document.createElement('p')
+          pElement.innerHTML = h2.innerHTML;
+          pElement.classList.add('h2');
+          h2.replaceWith(pElement);
+        });
+        h3s.forEach(h3 => {
+          const pElement = document.createElement('p')
+          pElement.innerHTML = h3.innerHTML;
+          pElement.classList.add('h3');
+          h3.replaceWith(pElement);
+        });
+        return doc.body.innerHTML;
+      };
+      const processedHtml = addClassToBlockquotes(content);
+      // console.log(processedHtml);
       return (
-        <div 
+        <div
           className="prose prose-lg max-w-none"
-          dangerouslySetInnerHTML={{ __html: content }}
+          dangerouslySetInnerHTML={{ __html: processedHtml }}
         />
       )
     }
-    
     // 将单个换行符转换为 <br>，双换行符转换为段落分隔
     const paragraphs = content.split('\n\n')
     const formattedParagraphs: JSX.Element[] = []
-    
+
     paragraphs.forEach((paragraph, index) => {
       if (paragraph.trim()) {
         // 将段落内的单换行符转换为 <br>
         const lines = paragraph.split('\n').filter(line => line.trim())
-        
+
         // Add pull quote every 3-4 paragraphs
         if (index > 0 && index % 3 === 0 && paragraph.length > 50) {
           formattedParagraphs.push(
@@ -159,7 +216,7 @@ const ArticlePage = () => {
         }
       }
     })
-    
+
     return <>{formattedParagraphs}</>
   }
 
@@ -230,15 +287,15 @@ const ArticlePage = () => {
                 <span className="font-sans text-metadata">{article.readCount} 次阅读</span>
               </div>
             </div>
-            
+
             <h1 className="font-serif text-h1 text-text-primary leading-tight max-w-4xl mx-auto">
               {article.title}
             </h1>
-            
+
             <p className="font-sans text-body text-text-secondary">
               作者：{article.author}
             </p>
-            
+
             {/* Tags */}
             <div className="flex flex-wrap justify-center gap-2">
               {article.tags.map((tag) => (
@@ -258,6 +315,9 @@ const ArticlePage = () => {
       {/* Article Content */}
       <article className="py-16">
         <div className="max-w-content mx-auto px-4 lg:px-8">
+          {/* <div v-if="article.excerpt" className="pull-quote" style={{ fontSize: '1rem' }}>
+            {formatContent("摘要：" + article.excerpt)}
+          </div> */}
           <div className="article-content">
             {formatContent(article.content)}
           </div>

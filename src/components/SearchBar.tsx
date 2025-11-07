@@ -24,7 +24,7 @@ const SearchBar = ({ onSearch, placeholder = "搜索文章、书籍..." }: Searc
   }
 
   return (
-    <div className="relative">
+    <div className="relative flex justify-center items-center">
       {isExpanded ? (
         <form onSubmit={handleSubmit} className="flex items-center">
           <div className="relative">
@@ -36,9 +36,9 @@ const SearchBar = ({ onSearch, placeholder = "搜索文章、书籍..." }: Searc
               className="w-64 px-4 py-2 pl-10 pr-10 bg-background-elevated border border-semantic-border rounded-xs focus:outline-none focus:border-accent-primary transition-colors duration-fast"
               autoFocus
             />
-            <Search 
-              size={16} 
-              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-tertiary" 
+            <Search
+              size={16}
+              className="absolute left-3 top-1/2 transform -translate-y-1/2 text-text-tertiary"
             />
             {query && (
               <button

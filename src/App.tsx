@@ -18,6 +18,7 @@ import AdminArticles from './pages/admin/AdminArticles'
 import AdminBooks from './pages/admin/AdminBooks'
 import AdminNovels from './pages/admin/AdminNovels'
 import AdminLife from './pages/admin/AdminLife'
+import AdminTags from './pages/admin/AdminTags'
 import './index.css'
 
 function App() {
@@ -35,6 +36,7 @@ function App() {
             <Route path="books" element={<AdminBooks />} />
             <Route path="novels" element={<AdminNovels />} />
             <Route path="life" element={<AdminLife />} />
+            <Route path="tags" element={<AdminTags />} />
           </Route>
 
           {/* 前台路由（带导航和页脚） */}

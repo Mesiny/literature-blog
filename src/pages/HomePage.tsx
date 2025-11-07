@@ -17,6 +17,7 @@ interface Stats {
   totalArticles: number
   totalBooks: number
   totalNovels: number
+  totalLifes: number
 }
 
 const HomePage = () => {
@@ -32,7 +33,7 @@ const HomePage = () => {
           .from('articles')
           .select('*')
           .eq('is_published', true)
-          .order('date', { ascending: false })
+          .order('created_at', { ascending: false })
           .limit(4)
 
         if (articlesError) throw articlesError
@@ -42,9 +43,8 @@ const HomePage = () => {
           .from('stats')
           .select('*')
           .maybeSingle()
-
+        // console.log(statsData);
         if (statsError) throw statsError
-        
         // 转换数据格式
         const formattedArticles = articlesData?.map(article => ({
           id: article.id,
@@ -54,13 +54,14 @@ const HomePage = () => {
           date: article.date,
           readCount: article.read_count
         })) || []
-        
+        // console.log(articlesData);
         setArticles(formattedArticles)
         setStats(statsData ? {
           totalViews: statsData.total_visitors,
           totalArticles: statsData.total_articles,
-          totalBooks: 6,
-          totalNovels: statsData.total_novels
+          totalBooks: statsData.total_recommend,
+          totalNovels: statsData.total_novels,
+          totalLifes: statsData.total_life
         } : null)
       } catch (error) {
         console.error('加载数据失败:', error)
@@ -79,15 +80,15 @@ const HomePage = () => {
         }
       }
     }
-    
+
     loadData()
   }, [])
 
   const categories = [
     { path: '/books', icon: BookOpen, label: '好书推荐', count: stats?.totalBooks || 0 },
-    { path: '/reflections', icon: PenTool, label: '读书感悟', count: 8 },
+    { path: '/reflections', icon: PenTool, label: '读书感悟', count: stats?.totalArticles || 0 },
     { path: '/novels', icon: Coffee, label: '小说连载', count: stats?.totalNovels || 0 },
-    { path: '/life', icon: Heart, label: '生活分享', count: 8 },
+    { path: '/life', icon: Heart, label: '生活分享', count: stats?.totalLifes || 0 },
   ]
 
   return (

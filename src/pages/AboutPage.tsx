@@ -3,27 +3,27 @@ import { Heart, BookOpen, Stethoscope, Coffee } from 'lucide-react'
 const AboutPage = () => {
   const timeline = [
     {
-      year: '2020',
+      year: '2021',
       title: '步入山西中医药大学',
       description: '开始学习针灸推拿专业，对中医文化产生了浓厚兴趣。'
     },
     {
-      year: '2021',
+      year: '2022',
       title: '加入文学社',
       description: '在文学社遇到了许多志同道合的朋友，开始用文字记录生活。'
     },
     {
-      year: '2022',
+      year: '2023',
       title: '第一次发表文章',
       description: '在校园文学刊物上发表了第一篇散文，感受到文字的力量。'
     },
     {
-      year: '2023',
+      year: '2024',
       title: '临床实习',
       description: '开始临床实习，在实践中体会医者的责任与使命。'
     },
     {
-      year: '2024',
+      year: '2025',
       title: '即将毕业',
       description: '即将毕业，对未来充满期待，希望能在医学道路上发光发热。'
     }
@@ -137,13 +137,13 @@ const AboutPage = () => {
             <div className="relative">
               {/* Timeline Line */}
               <div className="absolute left-8 top-0 bottom-0 w-0.5 bg-accent-primary"></div>
-              
+
               <div className="space-y-12">
                 {timeline.map((item, index) => (
                   <div key={index} className="relative flex items-start">
                     {/* Timeline Dot */}
                     <div className="absolute left-6 w-4 h-4 bg-accent-primary rounded-full border-4 border-background-surface"></div>
-                    
+
                     {/* Timeline Content */}
                     <div className="ml-16 bg-background-elevated p-6 rounded-sm border border-semantic-border hover:shadow-card-hover transition-all duration-standard">
                       <div className="space-y-3">

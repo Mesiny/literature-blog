@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { Plus, Edit2, Trash2, Eye, EyeOff, X, Save, BookOpen } from 'lucide-react'
 import ImageUpload from '../../components/admin/ImageUpload'
+import RichTextEditor from '../../components/admin/RichTextEditor'
 
 interface Novel {
   id: number
@@ -48,7 +49,7 @@ export default function AdminNovels() {
   const [currentNovelId, setCurrentNovelId] = useState<number | null>(null)
   const [chapters, setChapters] = useState<Chapter[]>([])
   const [editingChapterId, setEditingChapterId] = useState<number | null>(null)
-  
+
   const [formData, setFormData] = useState<NovelFormData>({
     novel_title: '',
     synopsis: '',
@@ -100,10 +101,19 @@ export default function AdminNovels() {
       console.error('加载章节失败:', error)
     }
   }
+  // 获取纯文本内容的长度
+  function getPlainTextLength(html) {
+    // 创建临时DOM元素
+    const tempElement = document.createElement('div');
+    tempElement.innerHTML = html;
 
+    // 获取纯文本内容
+    const plainText = tempElement.textContent || tempElement.innerText || '';
+    return plainText.length;
+  }
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    
+
     if (!formData.novel_title) {
       alert('请填写小说标题')
       return
@@ -155,7 +165,7 @@ export default function AdminNovels() {
 
   async function handleChapterSubmit(e: React.FormEvent) {
     e.preventDefault()
-    
+
     if (!chapterFormData.chapter_title || !chapterFormData.content) {
       alert('请填写章节标题和内容')
       return
@@ -163,7 +173,7 @@ export default function AdminNovels() {
 
     try {
       setSaving(true)
-      const wordCount = chapterFormData.content.length
+      const wordCount = getPlainTextLength(chapterFormData.content)
 
       if (editingChapterId) {
         const { error } = await supabase
@@ -192,7 +202,7 @@ export default function AdminNovels() {
         if (novel) {
           await supabase
             .from('novels')
-            .update({ 
+            .update({
               chapter_count: novel.chapter_count + 1,
               last_update: new Date().toISOString().split('T')[0]
             })
@@ -264,8 +274,8 @@ export default function AdminNovels() {
       })
     } else {
       setEditingChapterId(null)
-      const nextChapterNum = chapters.length > 0 
-        ? Math.max(...chapters.map(c => c.chapter_number)) + 1 
+      const nextChapterNum = chapters.length > 0
+        ? Math.max(...chapters.map(c => c.chapter_number)) + 1
         : 1
       setChapterFormData({
         chapter_number: nextChapterNum,
@@ -290,7 +300,7 @@ export default function AdminNovels() {
         .eq('id', id)
 
       if (error) throw error
-      
+
       setNovels(novels.map(novel =>
         novel.id === id
           ? { ...novel, is_published: !currentStatus }
@@ -375,7 +385,7 @@ export default function AdminNovels() {
               {novel?.novel_title} - 章节管理
             </h2>
           </div>
-          <button 
+          <button
             onClick={() => openChapterForm()}
             className="flex items-center gap-2 px-4 py-2 bg-accent-primary text-white rounded hover:bg-accent-hover transition-colors"
           >
@@ -494,15 +504,19 @@ export default function AdminNovels() {
             <label className="block text-sm font-medium text-text-primary mb-2">
               章节内容 *
             </label>
-            <textarea
+            {/* <textarea
               value={chapterFormData.content}
               onChange={(e) => setChapterFormData({ ...chapterFormData, content: e.target.value })}
               rows={20}
               className="w-full px-4 py-2 border border-divider rounded focus:outline-none focus:ring-2 focus:ring-accent-primary font-mono text-sm"
               required
+            /> */}
+            <RichTextEditor
+              value={chapterFormData.content}
+              onChange={(value) => setChapterFormData({ ...chapterFormData, content: value })}
             />
             <p className="text-xs text-text-tertiary mt-1">
-              字数: {chapterFormData.content.length}
+              字数: {getPlainTextLength(chapterFormData.content)}
             </p>
           </div>
 
@@ -535,7 +549,7 @@ export default function AdminNovels() {
         <h2 className="font-noto-serif text-3xl font-semibold text-text-primary">
           小说管理
         </h2>
-        <button 
+        <button
           onClick={() => openForm()}
           className="flex items-center gap-2 px-4 py-2 bg-accent-primary text-white rounded hover:bg-accent-hover transition-colors"
         >
@@ -587,22 +601,20 @@ export default function AdminNovels() {
                   </td>
                   <td className="px-6 py-4 text-sm text-text-secondary">{novel.last_update}</td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                      novel.status === '连载中'
-                        ? 'bg-blue-100 text-blue-700'
-                        : novel.status === '已完结'
+                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${novel.status === '连载中'
+                      ? 'bg-blue-100 text-blue-700'
+                      : novel.status === '已完结'
                         ? 'bg-green-100 text-green-700'
                         : 'bg-gray-100 text-gray-700'
-                    }`}>
+                      }`}>
                       {novel.status}
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                      novel.is_published
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}>
+                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${novel.is_published
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-100 text-gray-700'
+                      }`}>
                       {novel.is_published ? '已发布' : '草稿'}
                     </span>
                   </td>

@@ -25,9 +25,9 @@ const LifePage = () => {
           .from('life_posts')
           .select('*')
           .order('created_at', { ascending: false })
-        
+
         if (error) throw error
-        
+
         // 为每个文章加载图片
         const articlesWithImages = await Promise.all(
           (posts || []).map(async (post) => {
@@ -36,7 +36,7 @@ const LifePage = () => {
               .select('image_url')
               .eq('life_post_id', post.id)
               .order('display_order')
-            
+            console.log(post);
             return {
               id: post.id,
               title: post.title,
@@ -44,12 +44,12 @@ const LifePage = () => {
               category: '生活分享',
               tags: post.tags || [],
               date: new Date(post.created_at).toLocaleDateString('zh-CN'),
-              readCount: post.view_count || 0,
+              readCount: post.read_count || 0,
               images: images?.map(img => img.image_url) || []
             }
           })
         )
-        
+
         setArticles(articlesWithImages)
       } catch (error) {
         console.error('Failed to load life articles:', error)
@@ -63,7 +63,7 @@ const LifePage = () => {
         }
       }
     }
-    
+
     loadArticles()
   }, [])
 
@@ -101,7 +101,7 @@ const LifePage = () => {
                     />
                   </div>
                 )}
-                
+
                 <div className="p-6 space-y-4">
                   {/* Article Meta */}
                   <div className="flex items-center space-x-4">

@@ -58,7 +58,7 @@ export default function AdminArticles() {
       const { data, error } = await supabase
         .from('articles')
         .select('*')
-        .order('date', { ascending: false })
+        .order('created_at', { ascending: false })
 
       if (error) throw error
       setArticles(data || [])
@@ -68,7 +68,15 @@ export default function AdminArticles() {
       setLoading(false)
     }
   }
+  function getPlainTextLength(html) {
+    // 创建临时DOM元素
+    const tempElement = document.createElement('div');
+    tempElement.innerHTML = html;
 
+    // 获取纯文本内容
+    const plainText = tempElement.textContent || tempElement.innerText || '';
+    return plainText.length;
+  }
   async function loadTags() {
     try {
       const { data, error } = await supabase
@@ -85,7 +93,7 @@ export default function AdminArticles() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    
+
     if (!formData.title || !formData.content) {
       alert('请填写标题和内容')
       return
@@ -167,13 +175,13 @@ export default function AdminArticles() {
   async function openForm(article?: Article) {
     if (article) {
       setEditingId(article.id)
-      
+
       // 加载文章的标签
       const { data: articleTags } = await supabase
         .from('article_tags')
         .select('tag_id')
         .eq('article_id', article.id)
-      
+
       setFormData({
         title: article.title,
         excerpt: article.excerpt,
@@ -197,6 +205,7 @@ export default function AdminArticles() {
   }
 
   function closeForm() {
+    console.log(formData.content)
     setShowForm(false)
     setEditingId(null)
   }
@@ -209,7 +218,7 @@ export default function AdminArticles() {
         .eq('id', id)
 
       if (error) throw error
-      
+
       setArticles(articles.map(article =>
         article.id === id
           ? { ...article, is_published: !currentStatus }
@@ -335,18 +344,17 @@ export default function AdminArticles() {
           文章管理
         </h2>
         <div className="flex items-center gap-3">
-          <button 
+          <button
             onClick={() => setShowBatchActions(!showBatchActions)}
-            className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${
-              showBatchActions 
-                ? 'bg-accent-primary text-white' 
-                : 'bg-surface border border-divider text-text-primary hover:bg-background-page'
-            }`}
+            className={`flex items-center gap-2 px-4 py-2 rounded transition-colors ${showBatchActions
+              ? 'bg-accent-primary text-white'
+              : 'bg-surface border border-divider text-text-primary hover:bg-background-page'
+              }`}
           >
             {showBatchActions ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
             批量操作
           </button>
-          <button 
+          <button
             onClick={() => openForm()}
             className="flex items-center gap-2 px-4 py-2 bg-accent-primary text-white rounded hover:bg-accent-hover transition-colors"
           >
@@ -456,11 +464,10 @@ export default function AdminArticles() {
                   <td className="px-6 py-4 text-sm text-text-secondary">{article.date}</td>
                   <td className="px-6 py-4 text-sm text-text-secondary">{article.read_count}</td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                      article.is_published
-                        ? 'bg-green-100 text-green-700'
-                        : 'bg-gray-100 text-gray-700'
-                    }`}>
+                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${article.is_published
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-gray-100 text-gray-700'
+                      }`}>
                       {article.is_published ? '已发布' : '草稿'}
                     </span>
                   </td>
@@ -552,7 +559,7 @@ export default function AdminArticles() {
                 onChange={(value) => setFormData({ ...formData, content: value })}
               />
               <p className="text-xs text-text-tertiary mt-1">
-                字数: {formData.content.length}
+                字数: {getPlainTextLength(formData.content)}
               </p>
             </div>
 

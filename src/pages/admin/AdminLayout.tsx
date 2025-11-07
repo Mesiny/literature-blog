@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate, Link, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../../contexts/AuthContext'
-import { BookOpen, FileText, BookMarked, Heart, LogOut, BarChart } from 'lucide-react'
+import { BookOpen, FileText, BookMarked, Heart, LogOut, BarChart, Tags } from 'lucide-react'
 
 export default function AdminLayout() {
   const { user, loading, signOut } = useAuth()
@@ -41,6 +41,7 @@ export default function AdminLayout() {
     { path: '/admin/books', icon: BookOpen, label: '书籍推荐' },
     { path: '/admin/novels', icon: BookMarked, label: '小说管理' },
     { path: '/admin/life', icon: Heart, label: '生活分享' },
+    { path: '/admin/tags', icon: Tags, label: '标签管理' }
   ]
 
   return (
@@ -54,7 +55,7 @@ export default function AdminLayout() {
             </h1>
             <p className="text-sm text-text-tertiary">后台管理系统</p>
           </div>
-          
+
           <div className="flex items-center gap-4">
             <span className="text-sm text-text-secondary">{user.email}</span>
             <button
@@ -76,16 +77,15 @@ export default function AdminLayout() {
               {menuItems.map((item) => {
                 const Icon = item.icon
                 const isActive = location.pathname === item.path
-                
+
                 return (
                   <li key={item.path}>
                     <Link
                       to={item.path}
-                      className={`flex items-center gap-3 px-4 py-3 rounded transition-colors ${
-                        isActive
-                          ? 'bg-accent-primary text-white'
-                          : 'text-text-secondary hover:bg-background-page hover:text-text-primary'
-                      }`}
+                      className={`flex items-center gap-3 px-4 py-3 rounded transition-colors ${isActive
+                        ? 'bg-accent-primary text-white'
+                        : 'text-text-secondary hover:bg-background-page hover:text-text-primary'
+                        }`}
                     >
                       <Icon className="w-5 h-5" />
                       <span className="font-medium">{item.label}</span>

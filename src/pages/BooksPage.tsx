@@ -24,7 +24,7 @@ const BooksPage = () => {
           .select('*')
           .eq('is_published', true)
           .order('recommend_date', { ascending: false })
-
+        console.log(data);
         if (error) throw error
 
         const formattedBooks = data?.map(book => ({
@@ -51,14 +51,14 @@ const BooksPage = () => {
         }
       }
     }
-    
+
     loadBooks()
   }, [])
 
   const categories = ['全部', '经典文学', '现代文学', '外国文学', '哲理文学', '自然文学']
-  
-  const filteredBooks = selectedCategory === '全部' 
-    ? books 
+
+  const filteredBooks = selectedCategory === '全部'
+    ? books
     : books.filter(book => book.category === selectedCategory)
 
   return (
@@ -84,11 +84,10 @@ const BooksPage = () => {
               <button
                 key={category}
                 onClick={() => setSelectedCategory(category)}
-                className={`px-4 py-2 font-sans text-body-small rounded-xs transition-all duration-fast ${
-                  selectedCategory === category
+                className={`px-4 py-2 font-sans text-body-small rounded-xs transition-all duration-fast ${selectedCategory === category
                     ? 'bg-accent-primary text-white'
                     : 'bg-background-surface text-text-secondary border border-semantic-border hover:border-accent-primary hover:text-accent-primary'
-                }`}
+                  }`}
               >
                 {category}
               </button>
@@ -122,11 +121,11 @@ const BooksPage = () => {
                       {book.author}
                     </p>
                   </div>
-                  
+
                   <p className="font-serif text-body-small text-text-secondary leading-relaxed line-clamp-4">
                     {book.recommendation}
                   </p>
-                  
+
                   <div className="flex items-center justify-between pt-4 border-t border-semantic-divider">
                     <span className="px-3 py-1 bg-accent-primary/10 text-accent-primary font-sans text-metadata rounded-xs">
                       {book.category}
