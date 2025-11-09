@@ -200,7 +200,7 @@ const AboutPage = () => {
             </p>
             <div className="flex justify-center space-x-6">
               <a
-                href="mailto:contact@example.com"
+                href="mailto:2093654179@qq.com"
                 className="inline-flex items-center px-6 py-3 bg-accent-primary text-white font-sans text-body-small rounded-xs hover:bg-accent-hover transition-all duration-fast hover:-translate-y-0.5 hover:shadow-card-hover"
               >
                 发送邮件
