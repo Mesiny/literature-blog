@@ -164,10 +164,9 @@ export default function AdminLife() {
         await supabase.from('life_post_tags').delete().eq('life_post_id', editingId)
         if (formData.tagIds.length > 0) {
           const tagInserts = formData.tagIds.map(tagId => ({
-            life_post_id: editingId,
+            article_id: editingId,
             tag_id: tagId
           }))
-          console.log('tagInserts', tagInserts)
           await supabase.from('life_post_tags').insert(tagInserts)
         }
         alert('更新成功')
@@ -302,9 +301,6 @@ export default function AdminLife() {
     }
 
     try {
-      // 先删除关联的article_tags
-      await supabase.from('life_post_tags').delete().eq('life_post_id', id)
-
       const { error } = await supabase
         .from('life_posts')
         .delete()
@@ -348,7 +344,6 @@ export default function AdminLife() {
     }
 
     try {
-      await supabase.from('life_post_tags').delete().in('life_post_id', selectedIds)
       const { error } = await supabase.from('life_posts').delete().in('id', selectedIds)
       if (error) throw error
 

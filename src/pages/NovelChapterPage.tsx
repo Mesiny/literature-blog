@@ -137,8 +137,9 @@ const NovelChapterPage = () => {
   }
 
   const formatContent = (content: string) => {
+    // console.log('原始内容：', content);
     // 如果内容包含HTML标签，直接渲染HTML
-    if (content.includes('<p>') || content.includes('<br>') || content.includes('<div>')) {
+    if (content.includes('<p>') || content.includes('<br>') || content.includes('<div>') || content.includes('<h1>') || content.includes('<blockquote>') || content.includes('<h2>') || content.includes('<h3>')) {
       const addClassToBlockquotes = (htmlString: string): string => {
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlString, 'text/html');
@@ -172,7 +173,6 @@ const NovelChapterPage = () => {
         return doc.body.innerHTML;
       };
       const processedHtml = addClassToBlockquotes(content);
-      console.log(processedHtml);
       return (
         <div
           className="prose prose-lg max-w-none"
@@ -293,9 +293,12 @@ const NovelChapterPage = () => {
               第{currentChapter.chapterNumber}章 {currentChapter.chapterTitle}
             </h1>
 
-            <p className="font-serif text-body-large text-text-secondary max-w-2xl mx-auto italic">
-              "{currentChapter.excerpt}"
-            </p>
+            {currentChapter.excerpt && (
+              <p className="font-serif text-body-large text-text-secondary max-w-2xl mx-auto italic">
+                "{currentChapter.excerpt}"
+              </p>
+            )}
+
           </div>
         </div>
       </header>

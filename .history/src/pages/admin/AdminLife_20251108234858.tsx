@@ -302,9 +302,6 @@ export default function AdminLife() {
     }
 
     try {
-      // 先删除关联的article_tags
-      await supabase.from('life_post_tags').delete().eq('life_post_id', id)
-
       const { error } = await supabase
         .from('life_posts')
         .delete()

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { Plus, Edit2, Trash2, Eye, EyeOff, X, Save, Tag, Search, CheckSquare, Square } from 'lucide-react'
+import { Plus, Edit2, Trash2, Eye, EyeOff, X, Save, Search, CheckSquare, Square } from 'lucide-react'
 import ImageUpload from '../../components/admin/ImageUpload'
 import RichTextEditor from '../../components/admin/RichTextEditor'
 
@@ -22,13 +22,6 @@ interface LifePostFormData {
   category: string
   date: string
   images: string[]
-  tagIds: number[]
-}
-
-interface TagOption {
-  id: number
-  name: string,
-  created_at: string
 }
 
 export default function AdminLife() {
@@ -37,7 +30,6 @@ export default function AdminLife() {
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
-  const [tags, setTags] = useState<TagOption[]>([])
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [showBatchActions, setShowBatchActions] = useState(false)
@@ -47,8 +39,7 @@ export default function AdminLife() {
     content: '',
     category: '校园生活',
     date: new Date().toISOString().split('T')[0],
-    images: [],
-    tagIds: []
+    images: []
   })
   const [saving, setSaving] = useState(false)
 
@@ -56,7 +47,6 @@ export default function AdminLife() {
 
   useEffect(() => {
     loadPosts()
-    loadTags()
   }, [])
 
   useEffect(() => {
@@ -97,19 +87,6 @@ export default function AdminLife() {
     // 获取纯文本内容
     const plainText = tempElement.textContent || tempElement.innerText || '';
     return plainText.length;
-  }
-  async function loadTags() {
-    try {
-      const { data, error } = await supabase
-        .from('tags')
-        .select('*')
-        .order('name', { ascending: true })
-
-      if (error) throw error
-      setTags(data || [])
-    } catch (error) {
-      console.error('加载标签失败:', error)
-    }
   }
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -160,16 +137,7 @@ export default function AdminLife() {
               .insert(imageRecords)
           }
         }
-        // 更新标签关联
-        await supabase.from('life_post_tags').delete().eq('life_post_id', editingId)
-        if (formData.tagIds.length > 0) {
-          const tagInserts = formData.tagIds.map(tagId => ({
-            life_post_id: editingId,
-            tag_id: tagId
-          }))
-          console.log('tagInserts', tagInserts)
-          await supabase.from('life_post_tags').insert(tagInserts)
-        }
+
         alert('更新成功')
       } else {
         // 新建生活分享
@@ -189,15 +157,6 @@ export default function AdminLife() {
 
         if (error) throw error
 
-        // 添加标签关联
-        if (formData.tagIds.length > 0) {
-          const tagInserts = formData.tagIds.map(tagId => ({
-            life_post_id: newPost.id,
-            tag_id: tagId
-          }))
-          await supabase.from('life_post_tags').insert(tagInserts)
-        }
-
         // 保存图片
         if (newPost && formData.images.length > 0) {
           const imageRecords = formData.images
@@ -214,8 +173,6 @@ export default function AdminLife() {
               .insert(imageRecords)
           }
         }
-
-
 
         alert('创建成功')
       }
@@ -234,12 +191,6 @@ export default function AdminLife() {
     if (post) {
       setEditingId(post.id)
 
-      // 加载文章的标签
-      const { data: postTags } = await supabase
-        .from('life_post_tags')
-        .select('tag_id')
-        .eq('life_post_id', post.id)
-
       // 加载图片
       const { data: images } = await supabase
         .from('life_post_images')
@@ -253,8 +204,7 @@ export default function AdminLife() {
         content: post.content,
         category: post.category,
         date: post.date,
-        images: images?.map(img => img.image_url) || [],
-        tagIds: postTags?.map(at => at.tag_id) || []
+        images: images?.map(img => img.image_url) || []
       })
     } else {
       setEditingId(null)
@@ -264,8 +214,7 @@ export default function AdminLife() {
         content: '',
         category: '校园生活',
         date: new Date().toISOString().split('T')[0],
-        images: [],
-        tagIds: []
+        images: []
       })
     }
     setShowForm(true)
@@ -302,9 +251,6 @@ export default function AdminLife() {
     }
 
     try {
-      // 先删除关联的article_tags
-      await supabase.from('life_post_tags').delete().eq('life_post_id', id)
-
       const { error } = await supabase
         .from('life_posts')
         .delete()
@@ -348,7 +294,6 @@ export default function AdminLife() {
     }
 
     try {
-      await supabase.from('life_post_tags').delete().in('life_post_id', selectedIds)
       const { error } = await supabase.from('life_posts').delete().in('id', selectedIds)
       if (error) throw error
 
@@ -706,45 +651,6 @@ export default function AdminLife() {
                     />
                   </div>
                 ))}
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">
-                <Tag className="w-4 h-4 inline mr-1" />
-                标签
-              </label>
-              <div className="flex flex-wrap gap-3 p-4 border border-divider rounded bg-background-page">
-                {tags.length > 0 ? (
-                  tags.map(tag => (
-                    <label
-                      key={tag.id}
-                      className="flex items-center gap-2 cursor-pointer hover:text-accent-primary transition-colors"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.tagIds.includes(tag.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setFormData({
-                              ...formData,
-                              tagIds: [...formData.tagIds, tag.id]
-                            })
-                          } else {
-                            setFormData({
-                              ...formData,
-                              tagIds: formData.tagIds.filter(id => id !== tag.id)
-                            })
-                          }
-                        }}
-                        className="w-4 h-4 text-accent-primary border-divider rounded focus:ring-2 focus:ring-accent-primary"
-                      />
-                      <span className="text-sm text-text-secondary">{tag.name}</span>
-                    </label>
-                  ))
-                ) : (
-                  <span className="text-sm text-text-tertiary">暂无标签，请先在标签管理中创建</span>
-                )}
               </div>
             </div>
 

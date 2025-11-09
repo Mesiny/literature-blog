@@ -164,7 +164,7 @@ export default function AdminLife() {
         await supabase.from('life_post_tags').delete().eq('life_post_id', editingId)
         if (formData.tagIds.length > 0) {
           const tagInserts = formData.tagIds.map(tagId => ({
-            life_post_id: editingId,
+            article_id: editingId,
             tag_id: tagId
           }))
           console.log('tagInserts', tagInserts)
@@ -302,9 +302,6 @@ export default function AdminLife() {
     }
 
     try {
-      // 先删除关联的article_tags
-      await supabase.from('life_post_tags').delete().eq('life_post_id', id)
-
       const { error } = await supabase
         .from('life_posts')
         .delete()

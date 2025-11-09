@@ -8,7 +8,11 @@ interface Article {
   title: string
   excerpt: string
   category: string
-  tags: string[]
+  tags: {         // 对象数组
+    id: number
+    name: string
+    created_at: string
+  }[]
   date: string
   readCount: number
   relatedBook?: number
@@ -22,7 +26,12 @@ const ReflectionsPage = () => {
       try {
         const { data, error } = await supabase
           .from('articles')
-          .select('*')
+          .select(`
+                  *,
+                article_tags (
+                  tags (*)
+                )
+              `)
           .eq('is_published', true)
           .eq('category', '读书感悟')
           .order('date', { ascending: false })
@@ -34,7 +43,7 @@ const ReflectionsPage = () => {
           title: article.title,
           excerpt: article.excerpt,
           category: article.category,
-          tags: [],
+          tags: article.article_tags?.map(item => item.tags) ?? [],
           date: article.date,
           readCount: article.read_count,
           relatedBook: article.related_book
@@ -52,7 +61,7 @@ const ReflectionsPage = () => {
         }
       }
     }
-    
+
     loadArticles()
   }, [])
 
@@ -112,10 +121,10 @@ const ReflectionsPage = () => {
                   <div className="flex flex-wrap gap-2">
                     {article.tags.map((tag) => (
                       <span
-                        key={tag}
+                        key={tag.id}
                         className="px-3 py-1 bg-background-surface text-text-tertiary font-sans text-metadata rounded-xs"
                       >
-                        #{tag}
+                        #{tag.name}
                       </span>
                     ))}
                   </div>

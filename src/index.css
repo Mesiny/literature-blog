@@ -58,7 +58,7 @@
 
   .pull-quote {
     /* text-indent: 2em; */
-    font-size: 28px;
+    font-size: 1.3rem;
     font-style: italic;
     line-height: 1.5;
     color: #5A5A5A;
@@ -102,13 +102,13 @@ img {
 }
 
 .h1 {
-  font-size: 1.4rem;
+  font-size: 1.5rem;
 }
 
 .h2 {
-  font-size: 1.3rem;
+  font-size: 1.35rem;
 }
 
 .h3 {
-  font-size: 1.2rem;
+  font-size: 1.25rem;
 }

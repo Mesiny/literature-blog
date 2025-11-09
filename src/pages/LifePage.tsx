@@ -8,7 +8,11 @@ interface LifeArticle {
   title: string
   excerpt: string
   category: string
-  tags: string[]
+  tags: {         // 对象数组
+    id: number
+    name: string
+    created_at: string
+  }[]
   date: string
   readCount: number
   images?: string[]
@@ -23,7 +27,13 @@ const LifePage = () => {
         // 从 Supabase 加载生活分享文章
         const { data: posts, error } = await supabase
           .from('life_posts')
-          .select('*')
+          .select(`
+                  *,
+                life_post_tags (
+                  tags (*)
+                )
+              `)
+          .eq('is_published', true)
           .order('created_at', { ascending: false })
 
         if (error) throw error
@@ -36,13 +46,13 @@ const LifePage = () => {
               .select('image_url')
               .eq('life_post_id', post.id)
               .order('display_order')
-            console.log(post);
+
             return {
               id: post.id,
               title: post.title,
               excerpt: post.excerpt,
               category: '生活分享',
-              tags: post.tags || [],
+              tags: post.life_post_tags?.map(item => item.tags) ?? [],
               date: new Date(post.created_at).toLocaleDateString('zh-CN'),
               readCount: post.read_count || 0,
               images: images?.map(img => img.image_url) || []
@@ -134,10 +144,10 @@ const LifePage = () => {
                   <div className="flex flex-wrap gap-2">
                     {article.tags.map((tag) => (
                       <span
-                        key={tag}
+                        key={tag.id}
                         className="px-3 py-1 bg-background-surface text-text-tertiary font-sans text-metadata rounded-xs"
                       >
-                        #{tag}
+                        #{tag.name}
                       </span>
                     ))}
                   </div>

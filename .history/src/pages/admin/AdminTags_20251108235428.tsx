@@ -104,8 +104,7 @@ export default function TagManager() {
       // 先删除关联的article_tags
       await supabase.from('article_tags').delete().eq('tag_id', id)
       await supabase.from('life_post_tags').delete().eq('tag_id', id)
-      await supabase.from('novel_tags').delete().eq('tag_id', id)
-      // 还少一个删除小说标签的操作
+      // 还少一个删除小说标签的
       const { error } = await supabase
         .from('tags')
         .delete()

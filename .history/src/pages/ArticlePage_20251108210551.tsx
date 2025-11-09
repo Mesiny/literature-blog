@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { Calendar, Eye, ArrowLeft, Tag, Tags } from 'lucide-react'
+import { Calendar, Eye, ArrowLeft, Tag } from 'lucide-react'
 import { supabase } from '../lib/supabase'
 
 interface Article {
@@ -8,11 +8,7 @@ interface Article {
   title: string
   content: string
   category: string
-  tags: {         // 对象数组
-    id: number
-    name: string
-    created_at: string
-  }[]
+  tags: string[]
   date: string
   readCount: number
   author: string
@@ -53,7 +49,7 @@ const ArticlePage = () => {
               title: data.title,
               content: data.content,
               category: data.category,
-              tags: data.article_tags?.map(item => item.tags) ?? [],
+              tags: data.article_tags || [],
               date: new Date(data.created_at).toLocaleDateString('zh-CN'),
               readCount: data.read_count || 0,
               author: data.author || '岁月缱绻',
@@ -82,12 +78,7 @@ const ArticlePage = () => {
         } else if (category === '生活分享') {
           const { data, error } = await supabase
             .from('life_posts')
-            .select(`
-                  *,
-                life_post_tags (
-                  tags (*)
-                )
-              `)
+            .select('*')
             .eq('id', articleId)
             .maybeSingle()
 
@@ -98,7 +89,7 @@ const ArticlePage = () => {
               title: data.title,
               content: data.content,
               category: '生活分享',
-              tags: data.life_post_tags?.map(item => item.tags) ?? [],
+              tags: data.tags || [],
               date: new Date(data.created_at).toLocaleDateString('zh-CN'),
               readCount: data.read_count || 0,
               author: data.author || '岁月缱绻'
@@ -153,7 +144,7 @@ const ArticlePage = () => {
 
   const formatContent = (content: string) => {
     // 如果内容包含HTML标签，直接渲染HTML
-    if (content.includes('<p>') || content.includes('<br>') || content.includes('<div>') || content.includes('<h1>') || content.includes('<blockquote>') || content.includes('<h2>') || content.includes('<h3>')) {
+    if (content.includes('<p>') || content.includes('<br>') || content.includes('<div>')) {
       const addClassToBlockquotes = (htmlString: string): string => {
         const parser = new DOMParser();
         const doc = parser.parseFromString(htmlString, 'text/html');
@@ -314,11 +305,11 @@ const ArticlePage = () => {
             <div className="flex flex-wrap justify-center gap-2">
               {article.tags.map((tag) => (
                 <span
-                  key={tag.id}
+                  key={tag}
                   className="inline-flex items-center px-3 py-1 bg-background-elevated text-text-tertiary font-sans text-metadata rounded-xs"
                 >
                   <Tag size={12} className="mr-1" />
-                  {tag.name}
+                  {tag}
                 </span>
               ))}
             </div>

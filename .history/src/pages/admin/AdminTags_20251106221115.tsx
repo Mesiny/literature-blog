@@ -42,7 +42,7 @@ export default function TagManager() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-
+    
     if (!formData.name.trim()) {
       alert('请输入标签名称')
       return
@@ -103,9 +103,7 @@ export default function TagManager() {
     try {
       // 先删除关联的article_tags
       await supabase.from('article_tags').delete().eq('tag_id', id)
-      await supabase.from('life_post_tags').delete().eq('tag_id', id)
-      await supabase.from('novel_tags').delete().eq('tag_id', id)
-      // 还少一个删除小说标签的操作
+      
       const { error } = await supabase
         .from('tags')
         .delete()
@@ -131,7 +129,7 @@ export default function TagManager() {
         <h2 className="font-noto-serif text-3xl font-semibold text-text-primary">
           标签管理
         </h2>
-        <button
+        <button 
           onClick={() => openForm()}
           className="flex items-center gap-2 px-4 py-2 bg-accent-primary text-white rounded hover:bg-accent-hover transition-colors"
         >

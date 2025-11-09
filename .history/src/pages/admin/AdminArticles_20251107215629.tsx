@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { Plus, Edit2, Trash2, Eye, EyeOff, X, Save, Tag, Search, CheckSquare, Square } from 'lucide-react'
-import ImageUpload from '../../components/admin/ImageUpload'
+import { Plus, Edit2, Trash2, Eye, EyeOff, X, Save, Tag, CheckSquare, Square } from 'lucide-react'
 import RichTextEditor from '../../components/admin/RichTextEditor'
 
-interface LifePost {
+interface Article {
   id: number
   title: string
   excerpt: string
@@ -15,76 +14,56 @@ interface LifePost {
   is_published: boolean
 }
 
-interface LifePostFormData {
+interface ArticleFormData {
   title: string
   excerpt: string
   content: string
   category: string
   date: string
-  images: string[]
   tagIds: number[]
 }
 
 interface TagOption {
   id: number
-  name: string,
-  created_at: string
+  name: string
 }
 
-export default function AdminLife() {
-  const [posts, setPosts] = useState<LifePost[]>([])
-  const [filteredPosts, setFilteredPosts] = useState<LifePost[]>([])
+export default function AdminArticles() {
+  const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
   const [tags, setTags] = useState<TagOption[]>([])
-  const [searchTerm, setSearchTerm] = useState('')
   const [selectedIds, setSelectedIds] = useState<number[]>([])
   const [showBatchActions, setShowBatchActions] = useState(false)
-  const [formData, setFormData] = useState<LifePostFormData>({
+  const [formData, setFormData] = useState<ArticleFormData>({
     title: '',
     excerpt: '',
     content: '',
-    category: '校园生活',
+    category: '读书感悟',
     date: new Date().toISOString().split('T')[0],
-    images: [],
     tagIds: []
   })
   const [saving, setSaving] = useState(false)
 
-  const categories = ['校园生活', '中医学习', '日常感悟', '美食分享', '旅行记录']
+  const categories = ['读书感悟', '好书推荐', '生活分享', '小说连载']
 
   useEffect(() => {
-    loadPosts()
+    loadArticles()
     loadTags()
   }, [])
 
-  useEffect(() => {
-    // 搜索过滤
-    if (searchTerm.trim() === '') {
-      setFilteredPosts(posts)
-    } else {
-      const term = searchTerm.toLowerCase()
-      setFilteredPosts(posts.filter(post =>
-        post.title.toLowerCase().includes(term) ||
-        post.category.toLowerCase().includes(term) ||
-        post.excerpt.toLowerCase().includes(term)
-      ))
-    }
-  }, [searchTerm, posts])
-
-  async function loadPosts() {
+  async function loadArticles() {
     try {
       const { data, error } = await supabase
-        .from('life_posts')
+        .from('articles')
         .select('*')
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      setPosts(data || [])
-      setFilteredPosts(data || [])
+      setArticles(data || [])
     } catch (error) {
-      console.error('加载生活分享失败:', error)
+      console.error('加载文章失败:', error)
     } finally {
       setLoading(false)
     }
@@ -111,6 +90,7 @@ export default function AdminLife() {
       console.error('加载标签失败:', error)
     }
   }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
 
@@ -121,11 +101,12 @@ export default function AdminLife() {
 
     try {
       setSaving(true)
+      let articleId = editingId
 
       if (editingId) {
-        // 更新生活分享
+        // 更新文章
         const { error } = await supabase
-          .from('life_posts')
+          .from('articles')
           .update({
             title: formData.title,
             excerpt: formData.excerpt,
@@ -138,43 +119,21 @@ export default function AdminLife() {
 
         if (error) throw error
 
-        // 更新图片：先删除旧图片，再添加新图片
-        await supabase
-          .from('life_post_images')
-          .delete()
-          .eq('life_post_id', editingId)
-
-        // 添加新图片
-        if (formData.images.length > 0) {
-          const imageRecords = formData.images
-            .filter(img => img.trim() !== '')
-            .map((img, index) => ({
-              life_post_id: editingId,
-              image_url: img,
-              display_order: index
-            }))
-
-          if (imageRecords.length > 0) {
-            await supabase
-              .from('life_post_images')
-              .insert(imageRecords)
-          }
-        }
         // 更新标签关联
-        await supabase.from('life_post_tags').delete().eq('life_post_id', editingId)
+        await supabase.from('article_tags').delete().eq('article_id', editingId)
         if (formData.tagIds.length > 0) {
           const tagInserts = formData.tagIds.map(tagId => ({
-            life_post_id: editingId,
+            article_id: editingId,
             tag_id: tagId
           }))
-          console.log('tagInserts', tagInserts)
-          await supabase.from('life_post_tags').insert(tagInserts)
+          await supabase.from('article_tags').insert(tagInserts)
         }
+
         alert('更新成功')
       } else {
-        // 新建生活分享
-        const { data: newPost, error } = await supabase
-          .from('life_posts')
+        // 新建文章
+        const { data, error } = await supabase
+          .from('articles')
           .insert({
             title: formData.title,
             excerpt: formData.excerpt,
@@ -188,39 +147,22 @@ export default function AdminLife() {
           .single()
 
         if (error) throw error
+        articleId = data.id
 
         // 添加标签关联
         if (formData.tagIds.length > 0) {
           const tagInserts = formData.tagIds.map(tagId => ({
-            life_post_id: newPost.id,
+            article_id: data.id,
             tag_id: tagId
           }))
-          await supabase.from('life_post_tags').insert(tagInserts)
+          await supabase.from('article_tags').insert(tagInserts)
         }
-
-        // 保存图片
-        if (newPost && formData.images.length > 0) {
-          const imageRecords = formData.images
-            .filter(img => img.trim() !== '')
-            .map((img, index) => ({
-              life_post_id: newPost.id,
-              image_url: img,
-              display_order: index
-            }))
-
-          if (imageRecords.length > 0) {
-            await supabase
-              .from('life_post_images')
-              .insert(imageRecords)
-          }
-        }
-
-
 
         alert('创建成功')
       }
 
-      await loadPosts()
+      // 重新加载列表
+      await loadArticles()
       closeForm()
     } catch (error) {
       console.error('保存失败:', error)
@@ -230,31 +172,23 @@ export default function AdminLife() {
     }
   }
 
-  async function openForm(post?: LifePost) {
-    if (post) {
-      setEditingId(post.id)
+  async function openForm(article?: Article) {
+    if (article) {
+      setEditingId(article.id)
 
       // 加载文章的标签
-      const { data: postTags } = await supabase
-        .from('life_post_tags')
+      const { data: articleTags } = await supabase
+        .from('article_tags')
         .select('tag_id')
-        .eq('life_post_id', post.id)
-
-      // 加载图片
-      const { data: images } = await supabase
-        .from('life_post_images')
-        .select('image_url')
-        .eq('life_post_id', post.id)
-        .order('display_order')
+        .eq('article_id', article.id)
 
       setFormData({
-        title: post.title,
-        excerpt: post.excerpt,
-        content: post.content,
-        category: post.category,
-        date: post.date,
-        images: images?.map(img => img.image_url) || [],
-        tagIds: postTags?.map(at => at.tag_id) || []
+        title: article.title,
+        excerpt: article.excerpt,
+        content: article.content,
+        category: article.category,
+        date: article.date,
+        tagIds: articleTags?.map(at => at.tag_id) || []
       })
     } else {
       setEditingId(null)
@@ -262,9 +196,8 @@ export default function AdminLife() {
         title: '',
         excerpt: '',
         content: '',
-        category: '校园生活',
+        category: '读书感悟',
         date: new Date().toISOString().split('T')[0],
-        images: [],
         tagIds: []
       })
     }
@@ -272,6 +205,7 @@ export default function AdminLife() {
   }
 
   function closeForm() {
+    console.log(formData.content)
     setShowForm(false)
     setEditingId(null)
   }
@@ -279,16 +213,16 @@ export default function AdminLife() {
   async function togglePublish(id: number, currentStatus: boolean) {
     try {
       const { error } = await supabase
-        .from('life_posts')
+        .from('articles')
         .update({ is_published: !currentStatus })
         .eq('id', id)
 
       if (error) throw error
 
-      setPosts(posts.map(post =>
-        post.id === id
-          ? { ...post, is_published: !currentStatus }
-          : post
+      setArticles(articles.map(article =>
+        article.id === id
+          ? { ...article, is_published: !currentStatus }
+          : article
       ))
     } catch (error) {
       console.error('更新发布状态失败:', error)
@@ -296,36 +230,33 @@ export default function AdminLife() {
     }
   }
 
-  async function deletePost(id: number) {
-    if (!confirm('确定要删除这篇生活分享吗？此操作不可恢复。')) {
+  async function deleteArticle(id: number) {
+    if (!confirm('确定要删除这篇文章吗？此操作不可恢复。')) {
       return
     }
 
     try {
-      // 先删除关联的article_tags
-      await supabase.from('life_post_tags').delete().eq('life_post_id', id)
-
       const { error } = await supabase
-        .from('life_posts')
+        .from('articles')
         .delete()
         .eq('id', id)
 
       if (error) throw error
 
-      setPosts(posts.filter(post => post.id !== id))
+      setArticles(articles.filter(article => article.id !== id))
       alert('删除成功')
     } catch (error) {
-      console.error('删除生活分享失败:', error)
+      console.error('删除文章失败:', error)
       alert('删除失败，请重试')
     }
   }
 
   // 批量操作功能
   function toggleSelectAll() {
-    if (selectedIds.length === filteredPosts.length) {
+    if (selectedIds.length === articles.length) {
       setSelectedIds([])
     } else {
-      setSelectedIds(filteredPosts.map(post => post.id))
+      setSelectedIds(articles.map(article => article.id))
     }
   }
 
@@ -339,20 +270,20 @@ export default function AdminLife() {
 
   async function batchDelete() {
     if (selectedIds.length === 0) {
-      alert('请先选择要删除的生活分享')
+      alert('请先选择要删除的文章')
       return
     }
 
-    if (!confirm(`确定要删除选中的 ${selectedIds.length} 篇生活分享吗？此操作不可恢复。`)) {
+    if (!confirm(`确定要删除选中的 ${selectedIds.length} 篇文章吗？此操作不可恢复。`)) {
       return
     }
 
     try {
-      await supabase.from('life_post_tags').delete().in('life_post_id', selectedIds)
-      const { error } = await supabase.from('life_posts').delete().in('id', selectedIds)
+      await supabase.from('article_tags').delete().in('article_id', selectedIds)
+      const { error } = await supabase.from('articles').delete().in('id', selectedIds)
       if (error) throw error
 
-      setPosts(posts.filter(post => !selectedIds.includes(post.id)))
+      setArticles(articles.filter(article => !selectedIds.includes(article.id)))
       setSelectedIds([])
       setShowBatchActions(false)
       alert('批量删除成功')
@@ -364,15 +295,15 @@ export default function AdminLife() {
 
   async function batchUpdateCategory(category: string) {
     if (selectedIds.length === 0) {
-      alert('请先选择要修改的生活分享')
+      alert('请先选择要修改的文章')
       return
     }
 
     try {
-      const { error } = await supabase.from('life_posts').update({ category }).in('id', selectedIds)
+      const { error } = await supabase.from('articles').update({ category }).in('id', selectedIds)
       if (error) throw error
 
-      await loadPosts()
+      await loadArticles()
       setSelectedIds([])
       setShowBatchActions(false)
       alert('批量修改分类成功')
@@ -384,15 +315,15 @@ export default function AdminLife() {
 
   async function batchUpdatePublish(isPublished: boolean) {
     if (selectedIds.length === 0) {
-      alert('请先选择要修改的生活分享')
+      alert('请先选择要修改的文章')
       return
     }
 
     try {
-      const { error } = await supabase.from('life_posts').update({ is_published: isPublished }).in('id', selectedIds)
+      const { error } = await supabase.from('articles').update({ is_published: isPublished }).in('id', selectedIds)
       if (error) throw error
 
-      await loadPosts()
+      await loadArticles()
       setSelectedIds([])
       setShowBatchActions(false)
       alert(`批量${isPublished ? '发布' : '取消发布'}成功`)
@@ -402,34 +333,15 @@ export default function AdminLife() {
     }
   }
 
-
-  function addImageSlot() {
-    setFormData({
-      ...formData,
-      images: [...formData.images, '']
-    })
-  }
-
-  function updateImage(index: number, url: string) {
-    const newImages = [...formData.images]
-    newImages[index] = url
-    setFormData({ ...formData, images: newImages })
-  }
-
-  function removeImage(index: number) {
-    const newImages = formData.images.filter((_, i) => i !== index)
-    setFormData({ ...formData, images: newImages })
-  }
-
   if (loading) {
     return <div className="text-text-secondary">加载中...</div>
   }
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-8">
         <h2 className="font-noto-serif text-3xl font-semibold text-text-primary">
-          生活分享管理
+          文章管理
         </h2>
         <div className="flex items-center gap-3">
           <button
@@ -447,32 +359,13 @@ export default function AdminLife() {
             className="flex items-center gap-2 px-4 py-2 bg-accent-primary text-white rounded hover:bg-accent-hover transition-colors"
           >
             <Plus className="w-4 h-4" />
-            新建生活分享
+            新建文章
           </button>
         </div>
       </div>
 
-      {/* 搜索框 */}
-      {!showForm && (
-        <div className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
-            <input
-              type="text"
-              placeholder="搜索标题、分类或摘要..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-divider rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-primary"
-            />
-          </div>
-          <p className="text-sm text-text-tertiary mt-2">
-            共 {filteredPosts.length} 篇文章
-          </p>
-        </div>
-      )}
-
       {/* 批量操作面板 */}
-      {showBatchActions && !showForm && (
+      {showBatchActions && (
         <div className="mb-4 p-4 bg-accent-primary/5 border border-accent-primary/20 rounded-lg">
           <div className="flex items-center justify-between">
             <div className="text-sm text-text-secondary">
@@ -507,16 +400,18 @@ export default function AdminLife() {
                 className="px-3 py-1.5 text-sm border border-divider rounded focus:outline-none focus:ring-2 focus:ring-accent-primary"
               >
                 <option value="">修改分类...</option>
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
+                <option value="散文">散文</option>
+                <option value="诗歌">诗歌</option>
+                <option value="小说">小说</option>
+                <option value="随笔">随笔</option>
+                <option value="评论">评论</option>
               </select>
             </div>
           </div>
         </div>
       )}
 
-      {/* 生活分享列表 */}
+      {/* 文章列表 */}
       {!showForm && (
         <div className="bg-surface rounded-lg border border-divider overflow-hidden">
           <table className="w-full">
@@ -528,7 +423,7 @@ export default function AdminLife() {
                       onClick={toggleSelectAll}
                       className="p-1 text-text-tertiary hover:text-accent-primary transition-colors"
                     >
-                      {selectedIds.length === filteredPosts.length ? (
+                      {selectedIds.length === articles.length ? (
                         <CheckSquare className="w-5 h-5" />
                       ) : (
                         <Square className="w-5 h-5" />
@@ -545,15 +440,15 @@ export default function AdminLife() {
               </tr>
             </thead>
             <tbody className="divide-y divide-divider">
-              {filteredPosts.map((post) => (
-                <tr key={post.id} className="hover:bg-background-page transition-colors">
+              {articles.map((article) => (
+                <tr key={article.id} className="hover:bg-background-page transition-colors">
                   {showBatchActions && (
                     <td className="px-4 py-4">
                       <button
-                        onClick={() => toggleSelect(post.id)}
+                        onClick={() => toggleSelect(article.id)}
                         className="p-1 text-text-tertiary hover:text-accent-primary transition-colors"
                       >
-                        {selectedIds.includes(post.id) ? (
+                        {selectedIds.includes(article.id) ? (
                           <CheckSquare className="w-5 h-5" />
                         ) : (
                           <Square className="w-5 h-5" />
@@ -562,38 +457,38 @@ export default function AdminLife() {
                     </td>
                   )}
                   <td className="px-6 py-4">
-                    <div className="font-medium text-text-primary">{post.title}</div>
-                    <div className="text-sm text-text-tertiary truncate max-w-md">{post.excerpt}</div>
+                    <div className="font-medium text-text-primary">{article.title}</div>
+                    <div className="text-sm text-text-tertiary truncate max-w-md">{article.excerpt}</div>
                   </td>
-                  <td className="px-6 py-4 text-sm text-text-secondary">{post.category}</td>
-                  <td className="px-6 py-4 text-sm text-text-secondary">{post.date}</td>
-                  <td className="px-6 py-4 text-sm text-text-secondary">{post.read_count}</td>
+                  <td className="px-6 py-4 text-sm text-text-secondary">{article.category}</td>
+                  <td className="px-6 py-4 text-sm text-text-secondary">{article.date}</td>
+                  <td className="px-6 py-4 text-sm text-text-secondary">{article.read_count}</td>
                   <td className="px-6 py-4">
-                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${post.is_published
+                    <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${article.is_published
                       ? 'bg-green-100 text-green-700'
                       : 'bg-gray-100 text-gray-700'
                       }`}>
-                      {post.is_published ? '已发布' : '草稿'}
+                      {article.is_published ? '已发布' : '草稿'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
                       <button
-                        onClick={() => togglePublish(post.id, post.is_published)}
+                        onClick={() => togglePublish(article.id, article.is_published)}
                         className="p-2 text-text-tertiary hover:text-text-primary transition-colors"
-                        title={post.is_published ? '取消发布' : '发布'}
+                        title={article.is_published ? '取消发布' : '发布'}
                       >
-                        {post.is_published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        {article.is_published ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                       <button
-                        onClick={() => openForm(post)}
+                        onClick={() => openForm(article)}
                         className="p-2 text-text-tertiary hover:text-accent-primary transition-colors"
                         title="编辑"
                       >
                         <Edit2 className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => deletePost(post.id)}
+                        onClick={() => deleteArticle(article.id)}
                         className="p-2 text-text-tertiary hover:text-red-600 transition-colors"
                         title="删除"
                       >
@@ -606,26 +501,20 @@ export default function AdminLife() {
             </tbody>
           </table>
 
-          {filteredPosts.length === 0 && searchTerm === '' && (
+          {articles.length === 0 && (
             <div className="py-12 text-center text-text-tertiary">
-              暂无生活分享，点击"新建生活分享"开始创作
-            </div>
-          )}
-
-          {filteredPosts.length === 0 && searchTerm !== '' && (
-            <div className="py-12 text-center text-text-tertiary">
-              没有找到匹配 "{searchTerm}" 的内容
+              暂无文章，点击"新建文章"开始创作
             </div>
           )}
         </div>
       )}
 
-      {/* 生活分享表单 */}
+      {/* 文章表单 */}
       {showForm && (
         <div className="bg-surface rounded-lg border border-divider p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-semibold text-text-primary">
-              {editingId ? '编辑生活分享' : '新建生活分享'}
+              {editingId ? '编辑文章' : '新建文章'}
             </h3>
             <button
               onClick={closeForm}
@@ -665,14 +554,6 @@ export default function AdminLife() {
               <label className="block text-sm font-medium text-text-primary mb-2">
                 正文 *
               </label>
-              {/* <textarea
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                rows={12}
-                className="w-full px-4 py-2 border border-divider rounded focus:outline-none focus:ring-2 focus:ring-accent-primary font-mono text-sm whitespace-pre-wrap"
-                required
-                placeholder="支持单回车换行，段落之间可以用双回车分隔"
-              /> */}
               <RichTextEditor
                 value={formData.content}
                 onChange={(value) => setFormData({ ...formData, content: value })}
@@ -680,33 +561,6 @@ export default function AdminLife() {
               <p className="text-xs text-text-tertiary mt-1">
                 字数: {getPlainTextLength(formData.content)}
               </p>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-text-primary">
-                  配图
-                </label>
-                <button
-                  type="button"
-                  onClick={addImageSlot}
-                  className="text-sm text-accent-primary hover:text-accent-hover"
-                >
-                  + 添加图片
-                </button>
-              </div>
-              <div className="grid grid-cols-3 gap-4">
-                {formData.images.map((image, index) => (
-                  <div key={index}>
-                    <ImageUpload
-                      bucket="life-images"
-                      value={image}
-                      onChange={(url) => updateImage(index, url)}
-                      onRemove={() => removeImage(index)}
-                    />
-                  </div>
-                ))}
-              </div>
             </div>
 
             <div>

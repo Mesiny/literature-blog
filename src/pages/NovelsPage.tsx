@@ -19,7 +19,11 @@ interface Novel {
   lastUpdate: string
   status: string
   coverImage: string
-  tags: string[]
+  tags: {         // 对象数组
+    id: number
+    name: string
+    created_at: string
+  }[]
   chapters: Chapter[]
 }
 
@@ -34,7 +38,12 @@ const NovelsPage = () => {
       try {
         const { data, error } = await supabase
           .from('novels')
-          .select('*')
+          .select(`
+                  *,
+                novel_tags (
+                  tags (*)
+                )
+              `)
           .eq('is_published', true)
           .order('last_update', { ascending: false })
 
@@ -49,12 +58,6 @@ const NovelsPage = () => {
               .eq('novel_id', novel.id)
               .eq('is_published', true)
               .order('chapter_number', { ascending: true })
-            // await supabase
-            //   .from('novels')
-            //   .update({
-            //     chapter_count: chapters?.length || 0
-            //   })
-            //   .eq('id', novel.id)
             return {
               id: novel.id,
               novelTitle: novel.novel_title,
@@ -63,7 +66,7 @@ const NovelsPage = () => {
               lastUpdate: novel.last_update,
               status: novel.status,
               coverImage: novel.cover_image,
-              tags: [],
+              tags: novel.novel_tags?.map(item => item.tags) ?? [],
               chapters: chapters?.map(ch => ({
                 chapterNumber: ch.chapter_number,
                 chapterTitle: ch.chapter_title,
@@ -74,6 +77,7 @@ const NovelsPage = () => {
             }
           })
         )
+
         if (id) setShowChapters(Number(id))
         setNovels(novelsWithChapters)
       } catch (error) {
@@ -174,10 +178,10 @@ const NovelsPage = () => {
                     <div className="flex flex-wrap gap-2">
                       {novel.tags.map((tag) => (
                         <span
-                          key={tag}
+                          key={tag.id}
                           className="px-3 py-1 bg-background-surface text-text-tertiary font-sans text-metadata rounded-xs"
                         >
-                          #{tag}
+                          #{tag.name}
                         </span>
                       ))}
                     </div>

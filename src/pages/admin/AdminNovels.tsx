@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
-import { Plus, Edit2, Trash2, Eye, EyeOff, X, Save, BookOpen } from 'lucide-react'
+import { Plus, Edit2, Trash2, Eye, EyeOff, X, Save, BookOpen, Tag } from 'lucide-react'
 import ImageUpload from '../../components/admin/ImageUpload'
 import RichTextEditor from '../../components/admin/RichTextEditor'
 
@@ -20,7 +20,8 @@ interface NovelFormData {
   synopsis: string
   status: string
   cover_image: string
-  last_update: string
+  last_update: string,
+  tagIds: number[]
 }
 
 interface Chapter {
@@ -30,6 +31,7 @@ interface Chapter {
   content: string
   word_count: number
   publish_date: string
+  excerpt: string
 }
 
 interface ChapterFormData {
@@ -37,6 +39,13 @@ interface ChapterFormData {
   chapter_title: string
   content: string
   publish_date: string
+  excerpt: string
+}
+
+interface TagOption {
+  id: number
+  name: string,
+  created_at: string
 }
 
 export default function AdminNovels() {
@@ -46,6 +55,7 @@ export default function AdminNovels() {
   const [showChapters, setShowChapters] = useState(false)
   const [showChapterForm, setShowChapterForm] = useState(false)
   const [editingId, setEditingId] = useState<number | null>(null)
+  const [tags, setTags] = useState<TagOption[]>([])
   const [currentNovelId, setCurrentNovelId] = useState<number | null>(null)
   const [chapters, setChapters] = useState<Chapter[]>([])
   const [editingChapterId, setEditingChapterId] = useState<number | null>(null)
@@ -55,20 +65,23 @@ export default function AdminNovels() {
     synopsis: '',
     status: '连载中',
     cover_image: '',
-    last_update: new Date().toISOString().split('T')[0]
+    last_update: new Date().toISOString().split('T')[0],
+    tagIds: []
   })
 
   const [chapterFormData, setChapterFormData] = useState<ChapterFormData>({
     chapter_number: 1,
     chapter_title: '',
     content: '',
-    publish_date: new Date().toISOString().split('T')[0]
+    publish_date: new Date().toISOString().split('T')[0],
+    excerpt: ''
   })
 
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
     loadNovels()
+    loadTags()
   }, [])
 
   async function loadNovels() {
@@ -86,7 +99,19 @@ export default function AdminNovels() {
       setLoading(false)
     }
   }
+  async function loadTags() {
+    try {
+      const { data, error } = await supabase
+        .from('tags')
+        .select('*')
+        .order('name', { ascending: true })
 
+      if (error) throw error
+      setTags(data || [])
+    } catch (error) {
+      console.error('加载标签失败:', error)
+    }
+  }
   async function loadChapters(novelId: number) {
     try {
       const { data, error } = await supabase
@@ -123,6 +148,7 @@ export default function AdminNovels() {
       setSaving(true)
 
       if (editingId) {
+        // 更新小说信息，但不包括章节内容
         const { error } = await supabase
           .from('novels')
           .update({
@@ -135,9 +161,19 @@ export default function AdminNovels() {
           .eq('id', editingId)
 
         if (error) throw error
+        // 更新标签关联
+        await supabase.from('novel_tags').delete().eq('novel_id', editingId)
+        if (formData.tagIds.length > 0) {
+          const tagInserts = formData.tagIds.map(tagId => ({
+            novel_id: editingId,
+            tag_id: tagId
+          }))
+          await supabase.from('novel_tags').insert(tagInserts)
+        }
         alert('更新成功')
       } else {
-        const { error } = await supabase
+        // 创建新的小说信息，但不包括章节内容
+        const { data, error } = await supabase
           .from('novels')
           .insert({
             novel_title: formData.novel_title,
@@ -148,8 +184,19 @@ export default function AdminNovels() {
             chapter_count: 0,
             is_published: false
           })
+          .select()
+          .single()
 
         if (error) throw error
+
+        // 添加标签关联
+        if (formData.tagIds.length > 0) {
+          const tagInserts = formData.tagIds.map(tagId => ({
+            novel_id: data.id,
+            tag_id: tagId
+          }))
+          await supabase.from('novel_tags').insert(tagInserts)
+        }
         alert('创建成功')
       }
 
@@ -223,15 +270,24 @@ export default function AdminNovels() {
     }
   }
 
-  function openForm(novel?: Novel) {
+  async function openForm(novel?: Novel) {
     if (novel) {
       setEditingId(novel.id)
+
+      // 加载文章的标签
+      const { data: novelTags } = await supabase
+        .from('novel_tags')
+        .select('tag_id')
+        .eq('novel_id', novel.id)
+
+
       setFormData({
         novel_title: novel.novel_title,
         synopsis: novel.synopsis,
         status: novel.status,
         cover_image: novel.cover_image || '',
-        last_update: novel.last_update
+        last_update: novel.last_update,
+        tagIds: novelTags?.map(at => at.tag_id) || []
       })
     } else {
       setEditingId(null)
@@ -240,7 +296,8 @@ export default function AdminNovels() {
         synopsis: '',
         status: '连载中',
         cover_image: '',
-        last_update: new Date().toISOString().split('T')[0]
+        last_update: new Date().toISOString().split('T')[0],
+        tagIds: []
       })
     }
     setShowForm(true)
@@ -270,7 +327,8 @@ export default function AdminNovels() {
         chapter_number: chapter.chapter_number,
         chapter_title: chapter.chapter_title,
         content: chapter.content,
-        publish_date: chapter.publish_date
+        publish_date: chapter.publish_date,
+        excerpt: chapter.excerpt || ''
       })
     } else {
       setEditingChapterId(null)
@@ -281,7 +339,8 @@ export default function AdminNovels() {
         chapter_number: nextChapterNum,
         chapter_title: '',
         content: '',
-        publish_date: new Date().toISOString().split('T')[0]
+        publish_date: new Date().toISOString().split('T')[0],
+        excerpt: ''
       })
     }
     setShowChapterForm(true)
@@ -318,6 +377,10 @@ export default function AdminNovels() {
     }
 
     try {
+      // 先删除关联的novel_tags
+      await supabase.from('novel_tags').delete().eq('novel_id', id)
+
+      // 再删除章节和小说本身
       await supabase.from('chapters').delete().eq('novel_id', id)
       const { error } = await supabase
         .from('novels')
@@ -502,6 +565,18 @@ export default function AdminNovels() {
 
           <div>
             <label className="block text-sm font-medium text-text-primary mb-2">
+              摘引
+            </label>
+            <textarea
+              value={chapterFormData.excerpt}
+              onChange={(e) => setChapterFormData({ ...chapterFormData, excerpt: e.target.value })}
+              rows={2}
+              className="w-full px-4 py-2 border border-divider rounded focus:outline-none focus:ring-2 focus:ring-accent-primary"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-text-primary mb-2">
               章节内容 *
             </label>
             {/* <textarea
@@ -519,6 +594,7 @@ export default function AdminNovels() {
               字数: {getPlainTextLength(chapterFormData.content)}
             </p>
           </div>
+
 
           <div className="flex items-center gap-4 pt-4 border-t border-divider">
             <button
@@ -713,6 +789,45 @@ export default function AdminNovels() {
                 rows={4}
                 className="w-full px-4 py-2 border border-divider rounded focus:outline-none focus:ring-2 focus:ring-accent-primary"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-2">
+                <Tag className="w-4 h-4 inline mr-1" />
+                标签
+              </label>
+              <div className="flex flex-wrap gap-3 p-4 border border-divider rounded bg-background-page">
+                {tags.length > 0 ? (
+                  tags.map(tag => (
+                    <label
+                      key={tag.id}
+                      className="flex items-center gap-2 cursor-pointer hover:text-accent-primary transition-colors"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.tagIds.includes(tag.id)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData({
+                              ...formData,
+                              tagIds: [...formData.tagIds, tag.id]
+                            })
+                          } else {
+                            setFormData({
+                              ...formData,
+                              tagIds: formData.tagIds.filter(id => id !== tag.id)
+                            })
+                          }
+                        }}
+                        className="w-4 h-4 text-accent-primary border-divider rounded focus:ring-2 focus:ring-accent-primary"
+                      />
+                      <span className="text-sm text-text-secondary">{tag.name}</span>
+                    </label>
+                  ))
+                ) : (
+                  <span className="text-sm text-text-tertiary">暂无标签，请先在标签管理中创建</span>
+                )}
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">

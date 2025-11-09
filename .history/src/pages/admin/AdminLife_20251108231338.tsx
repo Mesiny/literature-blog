@@ -161,13 +161,12 @@ export default function AdminLife() {
           }
         }
         // 更新标签关联
-        await supabase.from('life_post_tags').delete().eq('life_post_id', editingId)
+        await supabase.from('life_post_tags').delete().eq('article_id', editingId)
         if (formData.tagIds.length > 0) {
           const tagInserts = formData.tagIds.map(tagId => ({
-            life_post_id: editingId,
+            article_id: editingId,
             tag_id: tagId
           }))
-          console.log('tagInserts', tagInserts)
           await supabase.from('life_post_tags').insert(tagInserts)
         }
         alert('更新成功')
@@ -189,15 +188,6 @@ export default function AdminLife() {
 
         if (error) throw error
 
-        // 添加标签关联
-        if (formData.tagIds.length > 0) {
-          const tagInserts = formData.tagIds.map(tagId => ({
-            life_post_id: newPost.id,
-            tag_id: tagId
-          }))
-          await supabase.from('life_post_tags').insert(tagInserts)
-        }
-
         // 保存图片
         if (newPost && formData.images.length > 0) {
           const imageRecords = formData.images
@@ -214,8 +204,6 @@ export default function AdminLife() {
               .insert(imageRecords)
           }
         }
-
-
 
         alert('创建成功')
       }
@@ -234,12 +222,6 @@ export default function AdminLife() {
     if (post) {
       setEditingId(post.id)
 
-      // 加载文章的标签
-      const { data: postTags } = await supabase
-        .from('life_post_tags')
-        .select('tag_id')
-        .eq('life_post_id', post.id)
-
       // 加载图片
       const { data: images } = await supabase
         .from('life_post_images')
@@ -254,7 +236,7 @@ export default function AdminLife() {
         category: post.category,
         date: post.date,
         images: images?.map(img => img.image_url) || [],
-        tagIds: postTags?.map(at => at.tag_id) || []
+        tagIds: []
       })
     } else {
       setEditingId(null)
@@ -302,9 +284,6 @@ export default function AdminLife() {
     }
 
     try {
-      // 先删除关联的article_tags
-      await supabase.from('life_post_tags').delete().eq('life_post_id', id)
-
       const { error } = await supabase
         .from('life_posts')
         .delete()
@@ -348,7 +327,6 @@ export default function AdminLife() {
     }
 
     try {
-      await supabase.from('life_post_tags').delete().in('life_post_id', selectedIds)
       const { error } = await supabase.from('life_posts').delete().in('id', selectedIds)
       if (error) throw error
 
