@@ -36,14 +36,15 @@ export default function AdminDashboard() {
         supabase.from('articles').select('id, is_published, read_count', { count: 'exact' }),
         supabase.from('books').select('id, is_published', { count: 'exact' }),
         supabase.from('novels').select('id', { count: 'exact' }),
-        supabase.from('chapters').select('id', { count: 'exact' }),
+        supabase.from('chapters').select('id, read_count', { count: 'exact' }),
         supabase.from('life_posts').select('id, read_count', { count: 'exact' }),
         supabase.from('tags').select('id', { count: 'exact' })
       ])
-
+      // console.log('章节阅读', chaptersResult);
       // 计算总阅读量
       const articleViews = articlesResult.data?.reduce((sum, a) => sum + (a.read_count || 0), 0) || 0
       const lifeViews = lifePostsResult.data?.reduce((sum, p) => sum + (p.read_count || 0), 0) || 0
+      const chapterViews = chaptersResult.data?.reduce((sum, c) => sum + (c.read_count || 0), 0) || 0
 
       // 计算发布数量
       const publishedArticles = articlesResult.data?.filter(a => a.is_published).length || 0
@@ -58,11 +59,12 @@ export default function AdminDashboard() {
         totalTags: tagsResult.count || 0,
         publishedArticles,
         publishedBooks,
-        totalViews: articleViews + lifeViews
+        totalViews: articleViews + lifeViews + chapterViews
       })
       await supabase
         .from('stats')
         .update({
+          total_visitors: articleViews + lifeViews + chapterViews,
           total_articles: publishedArticles,
           total_novels: novelsResult.count || 0,
           total_recommend: publishedBooks,

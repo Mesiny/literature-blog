@@ -1,6 +1,8 @@
-import { Heart, BookOpen, Stethoscope, Coffee } from 'lucide-react'
+import { useState } from 'react'
+import { Heart, BookOpen, Stethoscope, Coffee, X } from 'lucide-react'
 
 const AboutPage = () => {
+  const [showQRCode, setShowQRCode] = useState(false)
   const timeline = [
     {
       year: '2021',
@@ -205,16 +207,43 @@ const AboutPage = () => {
               >
                 发送邮件
               </a>
-              <a
-                href="#"
+              <button
+                onClick={() => setShowQRCode(true)}
                 className="inline-flex items-center px-6 py-3 border border-accent-primary text-accent-primary font-sans text-body-small rounded-xs hover:bg-accent-primary hover:text-white transition-all duration-fast"
               >
                 关注公众号
-              </a>
+              </button>
             </div>
           </div>
         </div>
       </section>
+
+      {/* QR Code Modal */}
+      {showQRCode && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full relative">
+            <button
+              onClick={() => setShowQRCode(false)}
+              className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <h3 className="font-serif text-h3 text-center mb-4 text-text-primary">
+              关注公众号
+            </h3>
+            <div className="flex justify-center mb-4">
+              <img
+                src="/imgs/wechat-qrcode.jpg"
+                alt="微信公众号二维码"
+                className="w-64 h-64 object-contain"
+              />
+            </div>
+            <p className="font-serif text-body text-center text-text-secondary">
+              扫描二维码关注我的微信公众号
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

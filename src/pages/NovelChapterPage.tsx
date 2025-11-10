@@ -84,6 +84,17 @@ const NovelChapterPage = () => {
               .update({ read_count: (currentChapterData.read_count || 0) + 1 })
               .eq('id', currentChapterData.id)
           }
+          // 更新总访问量
+          const { data: currentData, error: queryError } = await supabase
+            .from('stats')
+            .select('*')
+            .maybeSingle()
+          await supabase
+            .from('stats')
+            .update({
+              total_visitors: currentData.total_visitors + 1
+            })
+            .eq('id', 1)
         }
       } catch (error) {
         console.error('Failed to load novel:', error)
