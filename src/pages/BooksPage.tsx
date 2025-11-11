@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { useParams, Link } from 'react-router-dom'
 
 interface Book {
   id: number
@@ -34,7 +35,7 @@ const BooksPage = () => {
           coverImage: book.cover_image,
           rating: book.rating,
           recommendation: book.recommendation,
-          category: '现代文学',
+          category: book.category,
           date: book.recommend_date
         })) || []
 
@@ -55,11 +56,20 @@ const BooksPage = () => {
     loadBooks()
   }, [])
 
-  const categories = ['全部', '经典文学', '现代文学', '外国文学', '哲理文学', '自然文学']
+  const categories = ['全部', '文学小说', '散文随笔', '心灵成长', '社科人文', '中医典籍', '科幻奇幻', '其他']
 
   const filteredBooks = selectedCategory === '全部'
     ? books
     : books.filter(book => book.category === selectedCategory)
+  function getPlainText(html) {
+    // 创建临时DOM元素
+    const tempElement = document.createElement('div');
+    tempElement.innerHTML = html;
+
+    // 获取纯文本内容
+    const plainText = tempElement.textContent || tempElement.innerText || '';
+    return plainText;
+  }
 
   return (
     <div className="min-h-screen bg-background-page">
@@ -85,8 +95,8 @@ const BooksPage = () => {
                 key={category}
                 onClick={() => setSelectedCategory(category)}
                 className={`px-4 py-2 font-sans text-body-small rounded-xs transition-all duration-fast ${selectedCategory === category
-                    ? 'bg-accent-primary text-white'
-                    : 'bg-background-surface text-text-secondary border border-semantic-border hover:border-accent-primary hover:text-accent-primary'
+                  ? 'bg-accent-primary text-white'
+                  : 'bg-background-surface text-text-secondary border border-semantic-border hover:border-accent-primary hover:text-accent-primary'
                   }`}
               >
                 {category}
@@ -101,41 +111,42 @@ const BooksPage = () => {
         <div className="max-w-container mx-auto px-4 lg:px-8">
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredBooks.map((book) => (
-              <div
-                key={book.id}
-                className="group bg-background-elevated rounded-sm border border-semantic-border hover:shadow-card-hover hover:-translate-y-1 transition-all duration-standard overflow-hidden"
-              >
-                <div className="aspect-[3/4] overflow-hidden">
-                  <img
-                    src={book.coverImage}
-                    alt={book.bookTitle}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-standard"
-                  />
-                </div>
-                <div className="p-6 space-y-4">
-                  <div className="space-y-2">
-                    <h3 className="font-serif text-h3 text-text-primary group-hover:text-accent-primary transition-colors duration-fast">
-                      {book.bookTitle}
-                    </h3>
-                    <p className="font-serif text-body text-text-secondary">
-                      {book.author}
+              <Link to={`/book/${book.id}`} key={book.id}>
+                <div
+                  className="group bg-background-elevated rounded-sm border border-semantic-border hover:shadow-card-hover hover:-translate-y-1 transition-all duration-standard overflow-hidden"
+                >
+                  <div className="aspect-[3/4] overflow-hidden">
+                    <img
+                      src={book.coverImage}
+                      alt={book.bookTitle}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-standard"
+                    />
+                  </div>
+                  <div className="p-6 space-y-4">
+                    <div className="space-y-2">
+                      <h3 className="font-serif text-h3 text-text-primary group-hover:text-accent-primary transition-colors duration-fast">
+                        {book.bookTitle}
+                      </h3>
+                      <p className="font-serif text-body text-text-secondary">
+                        {book.author}
+                      </p>
+                    </div>
+
+                    <p className="font-serif text-body-small text-text-secondary leading-relaxed line-clamp-4">
+                      {getPlainText(book.recommendation)}
                     </p>
-                  </div>
 
-                  <p className="font-serif text-body-small text-text-secondary leading-relaxed line-clamp-4">
-                    {book.recommendation}
-                  </p>
-
-                  <div className="flex items-center justify-between pt-4 border-t border-semantic-divider">
-                    <span className="px-3 py-1 bg-accent-primary/10 text-accent-primary font-sans text-metadata rounded-xs">
-                      {book.category}
-                    </span>
-                    <span className="font-sans text-metadata text-text-tertiary">
-                      {book.date}
-                    </span>
+                    <div className="flex items-center justify-between pt-4 border-t border-semantic-divider">
+                      <span className="px-3 py-1 bg-accent-primary/10 text-accent-primary font-sans text-metadata rounded-xs">
+                        {book.category}
+                      </span>
+                      <span className="font-sans text-metadata text-text-tertiary">
+                        {book.date}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         </div>

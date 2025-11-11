@@ -2,157 +2,120 @@ import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { Calendar, Eye, ArrowLeft, Tag, Tags } from 'lucide-react'
 import { supabase } from '../lib/supabase'
+import { Star } from 'lucide-react'
 
-interface Article {
+interface Book {
   id: number
-  title: string
-  content: string
-  category: string
-  tags: {         // 对象数组
-    id: number
-    name: string
-    created_at: string
-  }[]
-  date: string
-  readCount: number
+  bookTitle: string
   author: string
-  relatedBook?: number,
-  excerpt?: string
+  coverImage: string
+  rating: number
+  recommendation: string
+  category: string,
+  title: string
+  date: string
 }
 
-const ArticlePage = () => {
-  const { category, id } = useParams<{ category: string; id: string }>()
-  const [article, setArticle] = useState<Article | null>(null)
+const BookViewPage = () => {
+  const { id } = useParams<{ id: string }>()
+  const [book, setBook] = useState<Book | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const loadArticle = async () => {
+    const loadBook = async () => {
       try {
-        const articleId = parseInt(id || '0')
-        let foundArticle: Article | null = null
+        const bookId = parseInt(id || '0')
+        let foundBook: Book | null = null
+        const { data, error } = await supabase
+          .from('books')
+          .select(`*`)
+          .eq('id', bookId)
+          .maybeSingle()
 
-        // 从 Supabase 加载文章
-        if (category === '读书感悟' || category === '随笔杂谈' || category === '心田絮语' || category === '生活日志' || category === '灵感札记') {
-          const { data, error } = await supabase
-            .from('articles')
-            .select(`
-                  *,
-                article_tags (
-                  tags (*)
-                )
-              `)
-            .eq('id', articleId)
-            // .eq('category', '读书感悟')
-            .maybeSingle()
-
-          if (error) throw error
-          // console.log('测试数据data', data);
-          if (data) {
-            foundArticle = {
-              id: data.id,
-              title: data.title,
-              content: data.content,
-              category: data.category,
-              tags: data.article_tags?.map(item => item.tags) ?? [],
-              date: new Date(data.created_at).toLocaleDateString('zh-CN'),
-              readCount: data.read_count || 0,
-              author: data.author || '岁月缱绻',
-              relatedBook: data.related_book_id,
-              excerpt: data.excerpt || ''
-            }
-
-            // 增加阅读量
-            await supabase
-              .from('articles')
-              .update({ read_count: (data.read_count || 0) + 1 })
-              .eq('id', articleId)
-            // 更新总访问量
-            const { data: currentData, error: queryError } = await supabase
-              .from('stats')
-              .select('*')
-              .maybeSingle()
-            await supabase
-              .from('stats')
-              .update({
-                total_visitors: currentData.total_visitors + 1
-              })
-              .eq('id', 1)
+        if (error) throw error
+        // console.log('测试数据data', data);
+        if (data) {
+          foundBook = {
+            id: data.id,
+            bookTitle: data.book_title,
+            author: data.author,
+            coverImage: data.cover_image,
+            rating: data.rating,
+            recommendation: data.recommendation,
+            category: data.category,
+            title: data.title,
+            date: data.recommend_date
           }
-
-        } else if (category === '生活分享') {
-          const { data, error } = await supabase
-            .from('life_posts')
-            .select(`
-                  *,
-                life_post_tags (
-                  tags (*)
-                )
-              `)
-            .eq('id', articleId)
+          // 更新总访问量
+          const { data: currentData, error: queryError } = await supabase
+            .from('stats')
+            .select('*')
             .maybeSingle()
-
-          if (error) throw error
-          if (data) {
-            foundArticle = {
-              id: data.id,
-              title: data.title,
-              content: data.content,
-              category: '生活分享',
-              tags: data.life_post_tags?.map(item => item.tags) ?? [],
-              date: new Date(data.created_at).toLocaleDateString('zh-CN'),
-              readCount: data.read_count || 0,
-              author: data.author || '岁月缱绻'
-            }
-
-            // 增加阅读量
-            await supabase
-              .from('life_posts')
-              .update({ read_count: (data.read_count || 0) + 1 })
-              .eq('id', articleId)
-            // 更新总访问量
-            const { data: currentData, error: queryError } = await supabase
-              .from('stats')
-              .select('*')
-              .maybeSingle()
-            await supabase
-              .from('stats')
-              .update({
-                total_visitors: currentData.total_visitors + 1
-              })
-              .eq('id', 1)
-          }
+          await supabase
+            .from('stats')
+            .update({
+              total_visitors: currentData.total_visitors + 1
+            })
+            .eq('id', 1)
         }
 
-        setArticle(foundArticle)
+
+
+        setBook(foundBook)
       } catch (error) {
         console.error('Failed to load article:', error)
         // 回退到静态文件
-        try {
-          let data: Article[] = []
-          if (category === '读书感悟') {
-            const response = await fetch('/data/articles.json')
-            data = await response.json()
-          } else if (category === '生活分享') {
-            const response = await fetch('/data/life-articles.json')
-            data = await response.json()
-          }
-          const foundArticle = data.find(item => item.id === parseInt(id || '0'))
-          setArticle(foundArticle || null)
-        } catch (fallbackError) {
-          console.error('Failed to load fallback data:', fallbackError)
-        }
+        // try {
+        //   let data: Article[] = []
+        //   if (category === '读书感悟') {
+        //     const response = await fetch('/data/articles.json')
+        //     data = await response.json()
+        //   } else if (category === '生活分享') {
+        //     const response = await fetch('/data/life-articles.json')
+        //     data = await response.json()
+        //   }
+        //   const foundArticle = data.find(item => item.id === parseInt(id || '0'))
+        //   setArticle(foundArticle || null)
+        // } catch (fallbackError) {
+        //   console.error('Failed to load fallback data:', fallbackError)
+        // }
       } finally {
         setLoading(false)
       }
     }
     // console.log(category, id);
-    if (category && id) {
-      loadArticle()
+    if (id) {
+      loadBook()
     }
-  }, [category, id])
+  }, [id])
+
+  const renderStars = (rating: number) => {
+    // 十分制转五分制
+    const ratingFive = rating / 2;
+    return Array.from({ length: 5 }, (_, index) => {
+      const full = index + 1 <= ratingFive
+      const half = !full && index + 0.5 <= ratingFive
+
+      return (
+        <Star
+          key={index}
+          size={16}
+          className={
+            full
+              ? 'text-yellow-400 fill-current'
+              : half
+                ? 'text-yellow-400 fill-current opacity-50' // 半星样式
+                : 'text-gray-300'
+          }
+        />
+      )
+    })
+  }
+
 
   const formatContent = (content: string) => {
     // 如果内容包含HTML标签，直接渲染HTML
+    console.log(content);
     if (content.includes('<p>') || content.includes('<br>') || content.includes('<div>') || content.includes('<h1>') || content.includes('<blockquote>') || content.includes('<h2>') || content.includes('<h3>')) {
       const addClassToBlockquotes = (htmlString: string): string => {
         const parser = new DOMParser();
@@ -245,7 +208,7 @@ const ArticlePage = () => {
     )
   }
 
-  if (!article) {
+  if (!book) {
     return (
       <div className="min-h-screen bg-background-page flex items-center justify-center">
         <div className="text-center space-y-4">
@@ -273,13 +236,13 @@ const ArticlePage = () => {
             </Link>
             <span className="text-text-tertiary">/</span>
             <Link
-              to={category === '生活分享' ? '/life' : '/reflections'}
+              to={'/books'}
               className="text-semantic-link hover:text-semantic-link-hover transition-colors duration-fast"
             >
-              {category}
+              {book.category}
             </Link>
             <span className="text-text-tertiary">/</span>
-            <span className="text-text-secondary">{article.title}</span>
+            <span className="text-text-secondary">{book.bookTitle}</span>
           </nav>
         </div>
       </div>
@@ -290,29 +253,32 @@ const ArticlePage = () => {
           <div className="text-center space-y-6">
             <div className="flex items-center justify-center space-x-4">
               <span className="px-3 py-1 bg-accent-primary/10 text-accent-primary font-sans text-metadata rounded-xs">
-                {article.category}
+                {'好书推荐'}
               </span>
               <div className="flex items-center space-x-1 text-text-tertiary">
                 <Calendar size={14} />
-                <span className="font-sans text-metadata">{article.date}</span>
+                <span className="font-sans text-metadata">{book.date}</span>
               </div>
-              <div className="flex items-center space-x-1 text-text-tertiary">
+              {/* <div className="flex items-center space-x-1 text-text-tertiary">
                 <Eye size={14} />
-                <span className="font-sans text-metadata">{article.readCount} 次阅读</span>
-              </div>
+                <span className="font-sans text-metadata">{book.readCount} 次阅读</span>
+              </div> */}
             </div>
 
             <h1 className="font-serif text-h1 text-text-primary leading-tight max-w-4xl mx-auto">
-              {article.title}
+              {book.title}
             </h1>
 
             <p className="font-sans text-body text-text-secondary">
-              作者：{article.author}
+              推荐书目：《{book.bookTitle}》 &nbsp;|&nbsp; 作者： {book.author}
+            </p>
+            <p className="flex justify-center items-center space-x-1">
+              评分：{renderStars(book.rating)}
             </p>
 
             {/* Tags */}
-            <div className="flex flex-wrap justify-center gap-2">
-              {article.tags.map((tag) => (
+            {/* <div className="flex flex-wrap justify-center gap-2">
+              {book.tags.map((tag) => (
                 <span
                   key={tag.id}
                   className="inline-flex items-center px-3 py-1 bg-background-elevated text-text-tertiary font-sans text-metadata rounded-xs"
@@ -321,7 +287,7 @@ const ArticlePage = () => {
                   {tag.name}
                 </span>
               ))}
-            </div>
+            </div> */}
           </div>
         </div>
       </header>
@@ -333,7 +299,7 @@ const ArticlePage = () => {
             {formatContent("摘要：" + article.excerpt)}
           </div> */}
           <div className="article-content">
-            {formatContent(article.content)}
+            {formatContent(book.recommendation)}
           </div>
         </div>
       </article>
@@ -348,7 +314,7 @@ const ArticlePage = () => {
             </p>
             <div className="flex justify-center space-x-4">
               <Link
-                to={category === '生活分享' ? '/life' : '/reflections'}
+                to={'/books'}
                 className="inline-flex items-center px-6 py-3 border border-accent-primary text-accent-primary font-sans text-body-small rounded-xs hover:bg-accent-primary hover:text-white transition-all duration-fast"
               >
                 <ArrowLeft size={16} className="mr-2" />
@@ -368,4 +334,4 @@ const ArticlePage = () => {
   )
 }
 
-export default ArticlePage
+export default BookViewPage

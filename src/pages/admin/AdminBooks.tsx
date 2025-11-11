@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import { Plus, Edit2, Trash2, Eye, EyeOff, X, Save, Search, CheckSquare, Square } from 'lucide-react'
 import ImageUpload from '../../components/admin/ImageUpload'
+import RichTextEditor from '../../components/admin/RichTextEditor'
 
 interface Book {
   id: number
@@ -12,6 +13,7 @@ interface Book {
   recommend_date: string
   cover_image: string
   category: string
+  title: string
   is_published: boolean
 }
 
@@ -23,9 +25,20 @@ interface BookFormData {
   recommend_date: string
   cover_image: string
   category: string
+  title: string
 }
 
-const bookCategories = ['文学小说', '社科人文', '历史传记', '科幻奇幻', '悬疑推理', '心灵成长', '经济管理', '其他']
+function getPlainText(html) {
+  // 创建临时DOM元素
+  const tempElement = document.createElement('div');
+  tempElement.innerHTML = html;
+
+  // 获取纯文本内容
+  const plainText = tempElement.textContent || tempElement.innerText || '';
+  return plainText;
+}
+
+const bookCategories = ['文学小说', '散文随笔', '心灵成长', '社科人文', '中医典籍', '科幻奇幻', '其他']
 
 export default function AdminBooks() {
   const [books, setBooks] = useState<Book[]>([])
@@ -43,7 +56,8 @@ export default function AdminBooks() {
     rating: 8.0,
     recommend_date: new Date().toISOString().split('T')[0],
     cover_image: '',
-    category: '文学小说'
+    category: '文学小说',
+    title: ''
   })
   const [saving, setSaving] = useState(false)
 
@@ -57,7 +71,7 @@ export default function AdminBooks() {
       setFilteredBooks(books)
     } else {
       const term = searchTerm.toLowerCase()
-      setFilteredBooks(books.filter(book => 
+      setFilteredBooks(books.filter(book =>
         book.book_title.toLowerCase().includes(term) ||
         book.author.toLowerCase().includes(term) ||
         book.category?.toLowerCase().includes(term)
@@ -84,15 +98,17 @@ export default function AdminBooks() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    
-    if (!formData.book_title || !formData.author) {
-      alert('请填写书名和作者')
+
+    if (!formData.book_title || !formData.author || !getPlainText(formData.recommendation).trim()) {
+      alert('请填写书名、作者和推荐语！')
       return
     }
 
     try {
       setSaving(true)
-
+      if (formData.title === '') {
+        formData.title = `《${formData.book_title}》的推荐语`
+      }
       if (editingId) {
         // 更新书籍
         const { error } = await supabase
@@ -138,7 +154,8 @@ export default function AdminBooks() {
         rating: book.rating,
         recommend_date: book.recommend_date,
         cover_image: book.cover_image || '',
-        category: book.category || '文学小说'
+        category: book.category || '文学小说',
+        title: book.title || ''
       })
     } else {
       setEditingId(null)
@@ -149,7 +166,8 @@ export default function AdminBooks() {
         rating: 8.0,
         recommend_date: new Date().toISOString().split('T')[0],
         cover_image: '',
-        category: '文学小说'
+        category: '文学小说',
+        title: ''
       })
     }
     setShowForm(true)
@@ -168,7 +186,7 @@ export default function AdminBooks() {
         .eq('id', id)
 
       if (error) throw error
-      
+
       setBooks(books.map(book =>
         book.id === id
           ? { ...book, is_published: !currentStatus }
@@ -313,7 +331,7 @@ export default function AdminBooks() {
               批量操作 ({selectedIds.length})
             </button>
           )}
-          <button 
+          <button
             onClick={() => openForm()}
             className="flex items-center gap-2 px-4 py-2 bg-accent-primary text-white rounded hover:bg-accent-hover transition-colors"
           >
@@ -402,9 +420,8 @@ export default function AdminBooks() {
           {filteredBooks.map((book) => (
             <div
               key={book.id}
-              className={`bg-surface rounded-lg border ${
-                selectedIds.includes(book.id) ? 'border-accent-primary ring-2 ring-accent-primary' : 'border-divider'
-              } p-6 hover:shadow-md transition-all relative`}
+              className={`bg-surface rounded-lg border ${selectedIds.includes(book.id) ? 'border-accent-primary ring-2 ring-accent-primary' : 'border-divider'
+                } p-6 hover:shadow-md transition-all relative`}
             >
               {/* 选择框 */}
               <div className="absolute top-4 right-4 z-10">
@@ -441,7 +458,7 @@ export default function AdminBooks() {
               <p className="text-sm text-text-secondary mb-1">作者: {book.author}</p>
               <p className="text-sm text-text-secondary mb-2">分类: {book.category || '未分类'}</p>
               <p className="text-sm text-text-tertiary mb-3 line-clamp-2">
-                {book.recommendation}
+                {getPlainText(book.recommendation)}
               </p>
 
               {/* 评分 */}
@@ -452,11 +469,10 @@ export default function AdminBooks() {
 
               {/* 状态和操作 */}
               <div className="flex items-center justify-between pt-4 border-t border-divider">
-                <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${
-                  book.is_published
-                    ? 'bg-green-100 text-green-700'
-                    : 'bg-gray-100 text-gray-700'
-                }`}>
+                <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium ${book.is_published
+                  ? 'bg-green-100 text-green-700'
+                  : 'bg-gray-100 text-gray-700'
+                  }`}>
                   {book.is_published ? '已发布' : '草稿'}
                 </span>
 
@@ -539,7 +555,7 @@ export default function AdminBooks() {
                   value={formData.book_title}
                   onChange={(e) => setFormData({ ...formData, book_title: e.target.value })}
                   className="w-full px-4 py-2 border border-divider rounded focus:outline-none focus:ring-2 focus:ring-accent-primary"
-                  required
+
                 />
               </div>
 
@@ -556,7 +572,17 @@ export default function AdminBooks() {
                 />
               </div>
             </div>
-
+            <div>
+              <label className="block text-sm font-medium text-text-primary mb-2">
+                荐书文章标题 * （如《xxx》的思与想 或《xxx》感悟等）
+              </label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                className="w-full px-4 py-2 border border-divider rounded focus:outline-none focus:ring-2 focus:ring-accent-primary"
+              />
+            </div>
             <div>
               <label className="block text-sm font-medium text-text-primary mb-2">
                 分类
@@ -576,12 +602,17 @@ export default function AdminBooks() {
               <label className="block text-sm font-medium text-text-primary mb-2">
                 推荐语
               </label>
-              <textarea
+              {/* <textarea
                 value={formData.recommendation}
                 onChange={(e) => setFormData({ ...formData, recommendation: e.target.value })}
                 rows={4}
                 className="w-full px-4 py-2 border border-divider rounded focus:outline-none focus:ring-2 focus:ring-accent-primary"
-              />
+              /> */
+                <RichTextEditor
+                  value={formData.recommendation}
+                  onChange={(value) => setFormData({ ...formData, recommendation: value })}
+                />
+              }
             </div>
 
             <div className="grid grid-cols-2 gap-4">

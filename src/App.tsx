@@ -19,6 +19,7 @@ import AdminBooks from './pages/admin/AdminBooks'
 import AdminNovels from './pages/admin/AdminNovels'
 import AdminLife from './pages/admin/AdminLife'
 import AdminTags from './pages/admin/AdminTags'
+import BookDetailPage from './pages/BookDetailPage'
 import './index.css'
 
 function App() {
@@ -117,6 +118,15 @@ function App() {
               <Navbar />
               <main className="pt-18">
                 <SearchPage />
+              </main>
+              <Footer />
+            </div>
+          } />
+          <Route path="/book/:id" element={
+            <div className="min-h-screen bg-background-page">
+              <Navbar />
+              <main className="pt-18">
+                <BookDetailPage />
               </main>
               <Footer />
             </div>
