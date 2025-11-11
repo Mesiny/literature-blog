@@ -33,7 +33,6 @@ const ReflectionsPage = () => {
                 )
               `)
           .eq('is_published', true)
-          .eq('category', '读书感悟')
           .order('date', { ascending: false })
 
         if (error) throw error
@@ -71,10 +70,10 @@ const ReflectionsPage = () => {
       <section className="py-16 bg-background-surface">
         <div className="max-w-container mx-auto px-4 lg:px-8">
           <div className="text-center space-y-6 max-w-3xl mx-auto">
-            <h1 className="font-serif text-h1 text-text-primary">读书感悟</h1>
+            <h1 className="font-serif text-h1 text-text-primary">心语拾光</h1>
             <p className="font-serif text-body-large text-text-secondary leading-relaxed">
-              每一本书都是一次心灵的旅行，每一篇感悟都是对生活的思考。<br />
-              在这里分享阅读路上的点点滴滴，与你一起在文字中寻找智慧与温暖。
+              生活不止眼前的忙碌，还有心底的柔软与思绪。<br />
+              在这里记录我的日常随笔、散文与感悟，愿这些心语，在你心中轻轻落下。
             </p>
           </div>
         </div>

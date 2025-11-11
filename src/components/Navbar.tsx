@@ -15,8 +15,9 @@ const Navbar = () => {
 
   const navItems = [
     { path: '/', label: '首页' },
+    { path: '/reflections', label: '心语拾光' },
     { path: '/books', label: '好书推荐' },
-    { path: '/reflections', label: '读书感悟' },
+
     { path: '/novels', label: '小说连载' },
     { path: '/life', label: '生活分享' },
     { path: '/about', label: '关于我' },
@@ -39,11 +40,10 @@ const Navbar = () => {
               <Link
                 key={item.path}
                 to={item.path}
-                className={`font-sans text-body-small transition-colors duration-fast relative ${
-                  isActive(item.path)
-                    ? 'text-accent-primary'
-                    : 'text-text-secondary hover:text-accent-primary'
-                }`}
+                className={`font-sans text-body-small transition-colors duration-fast relative ${isActive(item.path)
+                  ? 'text-accent-primary'
+                  : 'text-text-secondary hover:text-accent-primary'
+                  }`}
               >
                 {item.label}
                 {isActive(item.path) && (
@@ -75,11 +75,10 @@ const Navbar = () => {
                 <Link
                   key={item.path}
                   to={item.path}
-                  className={`block px-4 py-2 font-sans text-body transition-colors duration-fast ${
-                    isActive(item.path)
-                      ? 'text-accent-primary bg-background-surface'
-                      : 'text-text-secondary hover:text-accent-primary hover:bg-background-surface'
-                  }`}
+                  className={`block px-4 py-2 font-sans text-body transition-colors duration-fast ${isActive(item.path)
+                    ? 'text-accent-primary bg-background-surface'
+                    : 'text-text-secondary hover:text-accent-primary hover:bg-background-surface'
+                    }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {item.label}

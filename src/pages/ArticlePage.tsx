@@ -32,7 +32,7 @@ const ArticlePage = () => {
         let foundArticle: Article | null = null
 
         // 从 Supabase 加载文章
-        if (category === '读书感悟') {
+        if (category === '读书感悟' || category === '随笔杂谈' || category === '心田絮语' || category === '生活日志' || category === '灵感札记') {
           const { data, error } = await supabase
             .from('articles')
             .select(`
@@ -42,11 +42,11 @@ const ArticlePage = () => {
                 )
               `)
             .eq('id', articleId)
-            .eq('category', '读书感悟')
+            // .eq('category', '读书感悟')
             .maybeSingle()
 
           if (error) throw error
-          console.log('测试数据data', data);
+          // console.log('测试数据data', data);
           if (data) {
             foundArticle = {
               id: data.id,
@@ -145,7 +145,7 @@ const ArticlePage = () => {
         setLoading(false)
       }
     }
-
+    // console.log(category, id);
     if (category && id) {
       loadArticle()
     }
@@ -273,7 +273,7 @@ const ArticlePage = () => {
             </Link>
             <span className="text-text-tertiary">/</span>
             <Link
-              to={category === '读书感悟' ? '/reflections' : '/life'}
+              to={category === '生活分享' ? '/life' : '/reflections'}
               className="text-semantic-link hover:text-semantic-link-hover transition-colors duration-fast"
             >
               {category}

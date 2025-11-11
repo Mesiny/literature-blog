@@ -47,7 +47,7 @@ export default function AdminArticles() {
   })
   const [saving, setSaving] = useState(false)
 
-  const categories = ['读书感悟', '好书推荐', '生活分享', '小说连载']
+  const categories = ['读书感悟', '随笔杂谈', '心田絮语', '生活日志', '灵感札记']
 
   useEffect(() => {
     loadArticles()
