@@ -85,8 +85,8 @@ const HomePage = () => {
   }, [])
 
   const categories = [
+    { path: '/reflections', icon: PenTool, label: '心语时光', count: stats?.totalArticles || 0 },
     { path: '/books', icon: BookOpen, label: '好书推荐', count: stats?.totalBooks || 0 },
-    { path: '/reflections', icon: PenTool, label: '读书感悟', count: stats?.totalArticles || 0 },
     { path: '/novels', icon: Coffee, label: '小说连载', count: stats?.totalNovels || 0 },
     { path: '/life', icon: Heart, label: '生活分享', count: stats?.totalLifes || 0 },
   ]
@@ -210,7 +210,7 @@ const HomePage = () => {
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2">
                     <span className="px-3 py-1 bg-accent-primary/10 text-accent-primary font-sans text-metadata rounded-xs">
-                      {article.category}
+                      {article.category == '读书感悟' ? '心语时光' : article.category}
                     </span>
                     <span className="font-sans text-metadata text-text-tertiary">
                       {article.date}

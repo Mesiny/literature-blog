@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%
+  }
+
+  .dark {
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%
+  }
+
+  /* Global Typography */
+  body {
+    font-family: 'Noto Serif SC', 'Source Han Serif SC', 'STSong', Georgia, serif;
+    background-color: #FEFDFB;
+    color: #2A2A2A;
+    line-height: 1.7;
+  }
+
+  /* Article Typography */
+  .article-content {
+    max-width: 700px;
+    margin: 0 auto;
+    font-size: 18px;
+    line-height: 1.7;
+  }
+
+  .article-content p {
+    /* margin-bottom: 24px; */
+    margin-bottom: 2px;
+    text-indent: 2em;
+  }
+
+  .article-content p:first-child::first-letter {
+    float: left;
+    font-size: 72px;
+    font-weight: 700;
+    line-height: 1;
+
+    margin: 0.1em 0.1em 0 0;
+  }
+
+  .article-content p:first-child {
+    min-height: 4.5em;
+  }
+
+  .pull-quote {
+    font-size: 1.3rem;
+    font-style: italic;
+    line-height: 1.5;
+    color: #5A5A5A;
+    border-left: 4px solid #C8A882;
+    padding-left: 32px;
+    margin: 0px 0;
+  }
+
+  /* Smooth Scrolling */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom Scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #F9F7F3;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #C8A882;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #A88F6E;
+  }
+}
+
+
+
+img {
+  object-position: top;
+}
+
+.fixed {
+  position: fixed;
+}
+
+.h1 {
+  font-size: 1.5rem;
+}
+
+.h2 {
+  font-size: 1.35rem;
+}
+
+.h3 {
+  font-size: 1.25rem;
+}
