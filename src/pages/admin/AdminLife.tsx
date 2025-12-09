@@ -253,7 +253,7 @@ export default function AdminLife() {
         content: post.content,
         category: post.category,
         date: post.date,
-        images: images?.map(img => img.image_url) || [],
+        images: images?.map(img => img.image_url) || [''],
         tagIds: postTags?.map(at => at.tag_id) || []
       })
     } else {
@@ -264,7 +264,7 @@ export default function AdminLife() {
         content: '',
         category: '校园生活',
         date: new Date().toISOString().split('T')[0],
-        images: [],
+        images: [''],
         tagIds: []
       })
     }
@@ -403,13 +403,6 @@ export default function AdminLife() {
   }
 
 
-  function addImageSlot() {
-    setFormData({
-      ...formData,
-      images: [...formData.images, '']
-    })
-  }
-
   function updateImage(index: number, url: string) {
     const newImages = [...formData.images]
     newImages[index] = url
@@ -417,8 +410,13 @@ export default function AdminLife() {
   }
 
   function removeImage(index: number) {
-    const newImages = formData.images.filter((_, i) => i !== index)
-    setFormData({ ...formData, images: newImages })
+    // 移除图片时，如果只剩一个，就设置为空，否则正常移除
+    if (formData.images.length === 1) {
+      setFormData({ ...formData, images: [''] })
+    } else {
+      const newImages = formData.images.filter((_, i) => i !== index)
+      setFormData({ ...formData, images: newImages })
+    }
   }
 
   if (loading) {
@@ -683,29 +681,32 @@ export default function AdminLife() {
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-sm font-medium text-text-primary">
-                  配图
-                </label>
-                <button
-                  type="button"
-                  onClick={addImageSlot}
-                  className="text-sm text-accent-primary hover:text-accent-hover"
-                >
-                  + 添加图片
-                </button>
-              </div>
+              <label className="block text-sm font-medium text-text-primary mb-2">
+                封面
+              </label>
               <div className="grid grid-cols-3 gap-4">
-                {formData.images.map((image, index) => (
-                  <div key={index}>
+                {/* 始终显示一个图片槽，如果images数组为空，则显示一个空槽 */}
+                {formData.images.length === 0 ? (
+                  <div>
                     <ImageUpload
                       bucket="life-images"
-                      value={image}
-                      onChange={(url) => updateImage(index, url)}
-                      onRemove={() => removeImage(index)}
+                      value=""
+                      onChange={(url) => updateImage(0, url)}
+                      onRemove={() => removeImage(0)}
                     />
                   </div>
-                ))}
+                ) : (
+                  formData.images.map((image, index) => (
+                    <div key={index}>
+                      <ImageUpload
+                        bucket="life-images"
+                        value={image}
+                        onChange={(url) => updateImage(index, url)}
+                        onRemove={() => removeImage(index)}
+                      />
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 

@@ -37,6 +37,20 @@ const HomePage = () => {
           .limit(4)
 
         if (articlesError) throw articlesError
+        //  还要加载生活分享数据，并合并
+        const { data: lifeData, error: lifeError } = await supabase
+          .from('life_posts')
+          .select(`
+                  *,
+                life_post_tags (
+                  tags (*)
+                )
+              `)
+          .eq('is_published', true)
+          .order('created_at', { ascending: false })
+          .limit(4)
+
+        if (lifeError) throw lifeError
 
         // 加载统计数据
         const { data: statsData, error: statsError } = await supabase
@@ -46,14 +60,28 @@ const HomePage = () => {
         // console.log(statsData);
         if (statsError) throw statsError
         // 转换数据格式
-        const formattedArticles = articlesData?.map(article => ({
+        const heartArticles = articlesData?.map(article => ({
           id: article.id,
           title: article.title,
           excerpt: article.excerpt,
-          category: article.category,
+          category: "心语时光",
           date: article.date,
           readCount: article.read_count
         })) || []
+
+        const lifeArticles = lifeData?.map(article => ({
+          id: article.id,
+          title: article.title,
+          excerpt: article.excerpt,
+          category: "生活分享",
+          date: article.date,
+          readCount: article.read_count
+        })) || []
+
+        const formattedArticles = [...heartArticles, ...lifeArticles]
+          .sort((a, b) => new Date(b.date) - new Date(a.date)) // 1. 按日期降序排序
+          .slice(0, 4);                                        // 2. 取前4个
+        // console.log(lifeArticles);
         // console.log(articlesData);
         setArticles(formattedArticles)
         setStats(statsData ? {
