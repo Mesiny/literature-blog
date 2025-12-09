@@ -79,8 +79,9 @@ const HomePage = () => {
         })) || []
 
         const formattedArticles = [...heartArticles, ...lifeArticles]
-          .sort((a, b) => new Date(b.date) - new Date(a.date)) // 1. 按日期降序排序
-          .slice(0, 4);                                        // 2. 取前4个
+          // 修改处：加上 .getTime()
+          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+          .slice(0, 4);                                // 2. 取前4个
         // console.log(lifeArticles);
         // console.log(articlesData);
         setArticles(formattedArticles)
