@@ -290,7 +290,7 @@ const ArticlePage = () => {
           <div className="text-center space-y-6">
             <div className="flex items-center justify-center space-x-4">
               <span className="px-3 py-1 bg-accent-primary/10 text-accent-primary font-sans text-metadata rounded-xs">
-                {article.category == '读书感悟' ? '心语时光' : '反思随笔'}
+                {article.category == '读书感悟' ? '心语时光' : article.category}
               </span>
               <div className="flex items-center space-x-1 text-text-tertiary">
                 <Calendar size={14} />
