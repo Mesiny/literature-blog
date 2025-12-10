@@ -32,7 +32,7 @@ const ArticlePage = () => {
         let foundArticle: Article | null = null
 
         // 从 Supabase 加载文章
-        if (category === '读书感悟' || category === '随笔杂谈' || category === '心田絮语' || category === '生活日志' || category === '灵感札记' || category === '散文小说') {
+        if (category === '心语时光' || category === '读书感悟' || category === '随笔杂谈' || category === '心田絮语' || category === '生活日志' || category === '灵感札记' || category === '散文小说') {
           const { data, error } = await supabase
             .from('articles')
             .select(`
