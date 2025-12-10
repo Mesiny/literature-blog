@@ -52,6 +52,16 @@ const HomePage = () => {
 
         if (lifeError) throw lifeError
 
+        // 加载好书推荐数据，合并
+        const { data: bookData, error: bookError } = await supabase
+          .from('books')
+          .select('*')
+          .eq('is_published', true)
+          .order('recommend_date', { ascending: false })
+          .limit(4)
+        if (bookError) throw bookError
+
+
         // 加载统计数据
         const { data: statsData, error: statsError } = await supabase
           .from('stats')
@@ -78,7 +88,20 @@ const HomePage = () => {
           readCount: article.read_count
         })) || []
 
-        const formattedArticles = [...heartArticles, ...lifeArticles]
+        const bookArticles = bookData?.map(book => ({
+          id: book.id,
+          title: book.title,
+          excerpt: "读《" + book.book_title + "》有感",
+          category: "好书推荐",
+          date: book.recommend_date,
+          readCount: book.rating,
+
+        })) || []
+
+        console.log(bookArticles);
+
+
+        const formattedArticles = [...heartArticles, ...lifeArticles, ...bookArticles]
           // 修改处：加上 .getTime()
           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
           .slice(0, 4);                                // 2. 取前4个
@@ -232,8 +255,8 @@ const HomePage = () => {
           <div className="grid md:grid-cols-2 gap-8">
             {articles.map((article) => (
               <Link
-                key={article.id}
-                to={`/article/${article.category}/${article.id}`}
+                key={article.category + article.id}
+                to={article.category == '好书推荐' ? `/book/${article.id}` : `/article/${article.category}/${article.id}`}
                 className="group bg-background-elevated p-8 rounded-sm border border-semantic-border hover:shadow-card-hover hover:-translate-y-1 transition-all duration-standard"
               >
                 <div className="space-y-4">
@@ -253,7 +276,7 @@ const HomePage = () => {
                   </p>
                   <div className="flex items-center justify-between pt-4 border-t border-semantic-divider">
                     <span className="font-sans text-metadata text-text-tertiary">
-                      阅读 {article.readCount} 次
+                      {article.category == '好书推荐' ? `推荐指数： ${article.readCount} 分` : `阅读 ${article.readCount} 次`}
                     </span>
                     <span className="font-sans text-metadata text-accent-primary group-hover:text-accent-hover transition-colors duration-fast">
                       阅读全文 →
