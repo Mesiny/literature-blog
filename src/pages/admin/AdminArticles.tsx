@@ -41,7 +41,7 @@ export default function AdminArticles() {
     title: '',
     excerpt: '',
     content: '',
-    category: '读书感悟',
+    category: '',
     date: new Date().toISOString().split('T')[0],
     tagIds: []
   })
@@ -103,7 +103,6 @@ export default function AdminArticles() {
     try {
       setSaving(true)
       let articleId = editingId
-
       if (editingId) {
         // 更新文章
         const { error } = await supabase
@@ -197,7 +196,7 @@ export default function AdminArticles() {
         title: '',
         excerpt: '',
         content: '',
-        category: '读书感悟',
+        category: '心田絮语',
         date: new Date().toISOString().split('T')[0],
         tagIds: []
       })
@@ -225,6 +224,23 @@ export default function AdminArticles() {
           ? { ...article, is_published: !currentStatus }
           : article
       ))
+
+      // 更新文章总数
+      const [
+        articlesResult
+      ] = await Promise.all([
+        supabase.from('articles').select('id, is_published, read_count', { count: 'exact' }),
+      ])
+      // 计算发布数量
+      const publishedArticles = articlesResult.data?.filter(a => a.is_published).length || 0
+      await supabase
+        .from('stats')
+        .update({
+          total_articles: publishedArticles,
+        })
+        .eq('id', 1)
+
+
     } catch (error) {
       console.error('更新发布状态失败:', error)
       alert('更新失败，请重试')
@@ -248,6 +264,22 @@ export default function AdminArticles() {
       if (error) throw error
 
       setArticles(articles.filter(article => article.id !== id))
+
+      // 更新文章总数
+      const [
+        articlesResult
+      ] = await Promise.all([
+        supabase.from('articles').select('id, is_published, read_count', { count: 'exact' }),
+      ])
+      // 计算发布数量
+      const publishedArticles = articlesResult.data?.filter(a => a.is_published).length || 0
+      await supabase
+        .from('stats')
+        .update({
+          total_articles: publishedArticles,
+        })
+        .eq('id', 1)
+
       alert('删除成功')
     } catch (error) {
       console.error('删除文章失败:', error)
