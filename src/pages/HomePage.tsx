@@ -232,7 +232,7 @@ const HomePage = () => {
                         {category.label}
                       </h3>
                       <p className="font-sans text-body-small text-text-tertiary mt-1">
-                        {category.count} 篇文章
+                        {category.count} {category.label === '小说连载' ? '篇小说' : '篇文章'}
                       </p>
                     </div>
                   </div>
